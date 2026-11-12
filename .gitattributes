@@ -1,0 +1,13 @@
+# 原始 CSV 保持字节原样，Git 不做任何行尾转换
+# （采集数据要能与 Phyphox 导出件做 MD5 比对，转换了就比对失败）
+*.csv -text
+
+# 二进制资源
+*.png binary
+*.jpg binary
+*.jpeg binary
+
+# 文本按 LF 存储
+*.md text eol=lf
+*.py text eol=lf
+*.gitignore text eol=lf
