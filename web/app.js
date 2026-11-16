@@ -12,8 +12,18 @@ function esc(value) {
     .replace(/"/g, "&quot;");
 }
 
+/* 线上发布后网关要求每个请求都带 sharecode，否则 403。
+   服务端渲染首页时注入了 window.__SHARE_CODE__，这里统一附加。 */
+const SHARE_CODE =
+  window.__SHARE_CODE__ || new URLSearchParams(location.search).get("sharecode") || "";
+
+function withShare(path) {
+  if (!SHARE_CODE) return path;
+  return path + (path.includes("?") ? "&" : "?") + "sharecode=" + encodeURIComponent(SHARE_CODE);
+}
+
 async function api(path, options = {}) {
-  const res = await fetch(path, {
+  const res = await fetch(withShare(path), {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
@@ -311,7 +321,7 @@ async function loadTasks() {
 }
 
 $("#btn-refresh-tasks").addEventListener("click", loadTasks);
-$("#btn-ics").addEventListener("click", () => window.open("/api/export.ics", "_blank"));
+$("#btn-ics").addEventListener("click", () => window.open(withShare("/api/export.ics"), "_blank"));
 
 /* ------------------------------------------------------------ 器材 */
 let invRows = [];
@@ -403,7 +413,7 @@ $("#btn-copy-msg").addEventListener("click", async () => {
 });
 
 $("#btn-export-inv").addEventListener("click", async () => {
-  const res = await fetch("/api/export", {
+  const res = await fetch(withShare("/api/export"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ rows: invRows }),
@@ -430,6 +440,13 @@ $$("#fb-stars button").forEach((btn) => {
   });
 });
 
+/* 线上部署时 hostname 不是回环地址，反馈要多给一份可带走的副本 */
+const IS_CLOUD = !["127.0.0.1", "localhost", "::1"].includes(location.hostname);
+if (IS_CLOUD) {
+  const mode = $("#foot-mode");
+  if (mode) mode.textContent = "线上演示版";
+}
+
 $("#btn-feedback").addEventListener("click", async () => {
   if (!fbScore) {
     $("#fb-score-label").textContent = "先点个分吧";
@@ -447,14 +464,36 @@ $("#btn-feedback").addEventListener("click", async () => {
         would_use: $("#fb-would").checked,
       }),
     });
-    if (data.ok) {
-      $("#fb-thanks").hidden = false;
-      $("#fb-thanks").textContent = `已记录，谢谢。本机累计 ${data.count} 条反馈。`;
-      $("#fb-comment").value = "";
-      loadFeedbackCount();
+    if (!data.ok) return;
+
+    $("#fb-thanks").hidden = false;
+    $("#fb-thanks").textContent = data.persisted
+      ? `已记录，本机累计 ${data.count} 条反馈，谢谢。`
+      : "已收到，谢谢。";
+
+    // 云端：给一份可复制的原始记录，容器重建也不至于把反馈弄丢
+    const wrap = $("#fb-echo-wrap");
+    if (IS_CLOUD || !data.persisted) {
+      $("#fb-echo").textContent = data.line || "";
+      wrap.hidden = false;
+    } else {
+      wrap.hidden = true;
     }
+
+    $("#fb-comment").value = "";
+    loadFeedbackCount();
   } catch (err) {
     alert("提交失败：" + err.message);
+  }
+});
+
+$("#btn-copy-fb").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("#fb-echo").textContent);
+    $("#btn-copy-fb").textContent = "已复制 ✓";
+    setTimeout(() => ($("#btn-copy-fb").textContent = "复制这条反馈"), 1600);
+  } catch {
+    alert("复制失败，请手动选中文本复制");
   }
 });
 

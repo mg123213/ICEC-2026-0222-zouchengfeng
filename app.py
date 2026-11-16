@@ -6,8 +6,13 @@
     python app.py --port 9000    # 指定端口
     python app.py --no-browser   # 不自动打开浏览器
 
-只用 Python 标准库，不需要 pip install 任何东西。服务只监听 127.0.0.1，
-通知原文、器材表格、反馈内容全部留在本机，不出网。
+只用 Python 标准库，不需要 pip install 任何东西。
+
+监听地址分两种模式：
+* **本机模式**（默认）：只绑 127.0.0.1，同网段的其他机器访问不到，
+  通知原文、器材表格、反馈内容全部留在本机。
+* **云端模式**：环境变量里有 `PORT` 时（发布到沙箱后由平台注入），
+  绑 0.0.0.0 并把该端口作为服务端口，否则反向代理连不进来。
 """
 
 from __future__ import annotations
@@ -15,6 +20,8 @@ from __future__ import annotations
 import argparse
 import json
 import mimetypes
+import os
+import re
 import socket
 import sys
 import threading
@@ -25,7 +32,7 @@ from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Optional
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
@@ -41,6 +48,9 @@ NOTE_DIR = DATA_DIR / "notes"
 FEEDBACK_FILE = BASE_DIR / "feedback" / "responses.jsonl"
 
 MAX_BODY = 512 * 1024      # 单次请求体上限，防止误粘贴超大文件把内存打满
+
+# 平台发布后会注入 PORT；此时网关要求每个请求带 sharecode，静态资源也不例外
+IN_CLOUD = (os.environ.get("PORT") or "").strip().isdigit()
 
 _io_lock = threading.Lock()
 _tel = Telemetry()
@@ -228,12 +238,31 @@ def handle_feedback(payload: Dict[str, Any]) -> Dict[str, Any]:
         "comment": str(payload.get("comment") or "")[:300],
         "would_use": bool(payload.get("would_use")),
     }
-    _ensure_dirs()
-    with _io_lock:
-        with open(FEEDBACK_FILE, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
-    _tel.event("submit_feedback", ok=True, score=score, role=record["role"], source="web")
-    return {"ok": True, "saved": record["ts"], "count": count_feedback()}
+    serialized = json.dumps(record, ensure_ascii=False)
+
+    # 云端沙箱的磁盘不保证持久，写失败也要把内容原样回给前端，
+    # 让提交者能复制带走、事后补录到本机 responses.jsonl
+    persisted = True
+    try:
+        _ensure_dirs()
+        with _io_lock:
+            with open(FEEDBACK_FILE, "a", encoding="utf-8") as fh:
+                fh.write(serialized + "\n")
+    except OSError:
+        persisted = False
+
+    _tel.event(
+        "submit_feedback", ok=True, score=score, role=record["role"],
+        source="cloud" if (os.environ.get("PORT") or "").isdigit() else "web",
+        degraded=False if persisted else True,
+    )
+    return {
+        "ok": True,
+        "persisted": persisted,
+        "saved": record["ts"],
+        "count": count_feedback() if persisted else 0,
+        "line": serialized,
+    }
 
 
 def count_feedback() -> int:
@@ -286,12 +315,55 @@ class Handler(BaseHTTPRequestHandler):
             ctype += "; charset=utf-8"
         self._send(200, path.read_bytes(), ctype)
 
+    def _serve_index(self) -> None:
+        """返回首页。
+
+        线上部署时，平台网关要求**每个请求**都带 `sharecode`，浏览器自己发起的
+        `<link>` / `<script>` 不会带上主页面的查询参数，于是样式和脚本全部 403，
+        页面变成裸 HTML。而且网关在转发前会把 sharecode 从 query 里剥掉，
+        服务端也读不到它。
+
+        所以线上模式直接把 CSS/JS 内联进 HTML：整页只有一次请求，
+        后续的 fetch 由前端从 location.search 里取 sharecode 自行拼接。
+        本机运行没有这层网关，保持原来的外链，便于调试。
+        """
+        html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
+
+        if IN_CLOUD:
+            css = (WEB_DIR / "style.css").read_text(encoding="utf-8")
+            js = (WEB_DIR / "app.js").read_text(encoding="utf-8")
+            html = html.replace(
+                '<link rel="stylesheet" href="/static/style.css">',
+                f"<style>\n{css}\n</style>",
+            )
+            html = html.replace(
+                '<script src="/static/app.js"></script>',
+                f"<script>\n{js}\n</script>",
+            )
+
+        query = parse_qs(urlparse(self.path).query)
+        share = (query.get("sharecode") or [""])[0]
+        if share:
+            safe = "".join(ch for ch in share if ch.isalnum() or ch in "-_")[:64]
+            if safe:
+                html = re.sub(
+                    r'((?:href|src)="/static/[^"?]+)"',
+                    lambda m: f'{m.group(1)}?sharecode={safe}"',
+                    html,
+                )
+                html = html.replace(
+                    "<head>",
+                    f'<head>\n<script>window.__SHARE_CODE__={json.dumps(safe)};</script>',
+                    1,
+                )
+        self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
+
     # ----------------------------------------------------------- GET
     def do_GET(self) -> None:  # noqa: N802
         route = urlparse(self.path).path
         try:
             if route in ("/", "/index.html"):
-                self._serve_file(WEB_DIR / "index.html")
+                self._serve_index()
             elif route.startswith("/static/"):
                 rel = unquote(route[len("/static/"):])
                 target = (WEB_DIR / rel).resolve()
@@ -374,6 +446,18 @@ class Handler(BaseHTTPRequestHandler):
 
 
 # --------------------------------------------------------------------- 启动
+def resolve_bind() -> tuple:
+    """决定监听地址与端口。
+
+    返回 (host, port, in_cloud)。平台发布时会注入 PORT 环境变量，
+    此时必须绑 0.0.0.0 才能被反向代理访问；本机运行则只绑回环地址。
+    """
+    env_port = (os.environ.get("PORT") or "").strip()
+    if env_port.isdigit():
+        return "0.0.0.0", int(env_port), True
+    return "127.0.0.1", 8765, False
+
+
 def pick_port(preferred: int, host: str = "127.0.0.1") -> int:
     for port in [preferred] + list(range(preferred + 1, preferred + 20)):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -387,22 +471,28 @@ def pick_port(preferred: int, host: str = "127.0.0.1") -> int:
 
 
 def main() -> None:
+    host, default_port, in_cloud = resolve_bind()
+
     parser = argparse.ArgumentParser(description="校园通知雷达 · 本地服务")
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--port", type=int, default=default_port)
     parser.add_argument("--no-browser", action="store_true")
     args = parser.parse_args()
 
     _ensure_dirs()
-    port = pick_port(args.port)
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    url = f"http://127.0.0.1:{port}/"
+    # 云端端口由平台指定，不能改动；本机则允许自动让开被占用的端口
+    port = args.port if in_cloud else pick_port(args.port, host)
+    httpd = ThreadingHTTPServer((host, port), Handler)
 
-    _tel.event("app_start", ok=True, version=__version__, route="boot")
-    print(f"校园通知雷达 v{__version__} 已启动：{url}")
-    print("日志目录：process_logs/   按 Ctrl+C 停止")
+    _tel.event("app_start", ok=True, version=__version__, route="cloud" if in_cloud else "boot")
 
-    if not args.no_browser:
-        threading.Timer(0.6, lambda: webbrowser.open(url)).start()
+    if in_cloud:
+        print(f"校园通知雷达 v{__version__} 已启动，监听 0.0.0.0:{port}")
+    else:
+        url = f"http://127.0.0.1:{port}/"
+        print(f"校园通知雷达 v{__version__} 已启动：{url}")
+        print("日志目录：process_logs/   按 Ctrl+C 停止")
+        if not args.no_browser:
+            threading.Timer(0.6, lambda: webbrowser.open(url)).start()
 
     try:
         httpd.serve_forever()

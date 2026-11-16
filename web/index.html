@@ -161,12 +161,17 @@
 
       <button class="btn primary wide" id="btn-feedback">提交反馈</button>
       <p class="hint" id="fb-thanks" hidden>已记录，谢谢。</p>
+      <div id="fb-echo-wrap" hidden>
+        <p class="hint">已收到。线上环境重建后数据可能清空，建议点一下复制，把这条发给项目组备份。</p>
+        <pre id="fb-echo" class="feedback-echo"></pre>
+        <button class="btn ghost small" id="btn-copy-fb">复制这条反馈</button>
+      </div>
     </div>
   </section>
 </main>
 
 <footer>
-  <span>校园通知雷达 <strong id="version">v0.1.0</strong> · 纯本地运行 · 无第三方依赖</span>
+  <span>校园通知雷达 <strong id="version">v0.1.0</strong> · <span id="foot-mode">纯本地运行</span> · 无第三方依赖</span>
   <span id="foot-stat"></span>
 </footer>
 

@@ -98,3 +98,8 @@
 {"ts":"2026-11-17T00:50+08:00","sid":"ac1f39","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
 {"ts":"2026-11-17T00:50+08:00","sid":"ac1f39","evt":"self_check","dur_ms":11.1,"ok":true,"meta":{"sample":2}}
 {"ts":"2026-11-17T00:50+08:00","sid":"ac1f39","evt":"daily_run_end","dur_ms":49.47,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
+{"ts":"2026-11-17T00:53+08:00","sid":"a90954","evt":"parse_notice","dur_ms":0.46,"ok":true,"meta":{"chars":219,"items":4,"deadline":true,"deadline_conf":0.94,"materials":4,"located":true,"contact":true,"tags":2,"mode":"web","source":"web"}}
+{"ts":"2026-11-17T00:54+08:00","sid":"64366c","evt":"app_start","ok":true,"meta":{"version":"0.4.0","route":"cloud"}}
+{"ts":"2026-11-17T00:59+08:00","sid":"64366c","evt":"submit_feedback","ok":true,"meta":{"score":4,"role":"普通同学","source":"cloud","degraded":false}}
+{"ts":"2026-11-17T01:01+08:00","sid":"f3bf1c","evt":"app_start","ok":true,"meta":{"version":"0.4.0","route":"boot"}}
+{"ts":"2026-11-17T01:02+08:00","sid":"2ec8ea","evt":"app_start","ok":true,"meta":{"version":"0.4.0","route":"cloud"}}
