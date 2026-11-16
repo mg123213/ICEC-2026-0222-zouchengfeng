@@ -1,0 +1,2 @@
+﻿date,events,calls,errors,error_rate,avg_ms,p95_ms,max_ms,sessions,top_event
+2026-11-17,21,21,2,9.52,3.38,11.8,40.78,4,dev_diagnose
