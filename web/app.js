@@ -22,15 +22,15 @@ async function api(path, options = {}) {
 }
 
 /* ------------------------------------------------------------ 标签页 */
+function switchTab(name) {
+  $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.panel === name));
+  $$(".panel").forEach((p) => p.classList.toggle("active", p.id === `panel-${name}`));
+  if (name === "tasks") loadTasks();
+  if (name === "feedback") loadFeedbackCount();
+}
+
 $$(".tab").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    $$(".tab").forEach((t) => t.classList.remove("active"));
-    $$(".panel").forEach((p) => p.classList.remove("active"));
-    tab.classList.add("active");
-    $(`#panel-${tab.dataset.panel}`).classList.add("active");
-    if (tab.dataset.panel === "tasks") loadTasks();
-    if (tab.dataset.panel === "feedback") loadFeedbackCount();
-  });
+  tab.addEventListener("click", () => switchTab(tab.dataset.panel));
 });
 
 /* ------------------------------------------------------------ 样例 */
@@ -482,8 +482,36 @@ async function loadStats() {
   }
 }
 
-$("#version").textContent = "v0.1.0";
+async function loadVersion() {
+  try {
+    const data = await api("/api/health");
+    $("#version").textContent = "v" + data.version;
+  } catch {
+    /* 版本号取不到就保留页面里的占位 */
+  }
+}
+
 updateCharCount();
+loadVersion();
 loadStats();
 loadTasks();
 setInterval(loadStats, 30000);
+
+/* 演示模式：?demo=1 自动填示例并解析，?tab=xxx 直达某个标签页。
+   只影响前端填充，不改变任何业务逻辑。 */
+const params = new URLSearchParams(location.search);
+const startTab = params.get("tab");
+if (startTab) switchTab(startTab);
+
+if (params.get("demo") === "1") {
+  if (!startTab || startTab === "parse") {
+    $("#notice-text").value = SAMPLE_NOTICE;
+    updateCharCount();
+    setTimeout(doParse, 300);
+  }
+  if (startTab === "inventory") {
+    $("#lent-text").value = SAMPLE_LENT;
+    $("#returned-text").value = SAMPLE_RETURNED;
+    setTimeout(() => $("#btn-check-inv").click(), 250);
+  }
+}

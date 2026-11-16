@@ -274,7 +274,7 @@ def main() -> int:
         added = scan_inbox()
         check = self_check()
 
-    summary = rollup(added)
+    # 先写收尾日志再汇总：v0.1 把顺序反了，导致日报里永远少一条 daily_run_end
     _tel.event(
         "daily_run_end",
         dur_ms=(time.perf_counter() - t0) * 1000,
@@ -283,6 +283,7 @@ def main() -> int:
         items=len(added),
         source="auto",
     )
+    summary = rollup(added)
 
     if not args.quiet:
         print(f"[{datetime.now(CST):%Y-%m-%d %H:%M}] 新增待办 {len(added)} 条，"

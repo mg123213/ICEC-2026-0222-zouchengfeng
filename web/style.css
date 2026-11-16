@@ -20,6 +20,9 @@
 
 * { box-sizing: border-box; }
 
+/* .empty 用了 display:grid，会覆盖 hidden 属性的默认 display:none，必须显式压回去 */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
