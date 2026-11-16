@@ -38,7 +38,7 @@ INBOX = SRC / "data" / "inbox"
 TASK_FILE = SRC / "data" / "tasks.json"
 NOTE_DIR = SRC / "data" / "notes"
 REPORT_DIR = BASE / "process_logs" / "reports"
-SUMMARY_CSV = BASE / "process_logs" / "summary.csv"
+SUMMARY_CSV = BASE / "process_logs" / "telemetry" / "summary.csv"
 
 SUMMARY_FIELDS = [
     "date", "events", "calls", "errors", "error_rate",
@@ -188,6 +188,7 @@ def rollup(extra_notes: list | None = None) -> dict:
     records = _tel.read_day(today)
     summary = summarize_records(records)
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    SUMMARY_CSV.parent.mkdir(parents=True, exist_ok=True)
 
     # 汇总 CSV：首行写表头，之后按日期去重更新
     rows = []

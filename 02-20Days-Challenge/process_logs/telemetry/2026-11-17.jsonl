@@ -114,3 +114,6 @@
 {"ts":"2026-11-17T01:23+08:00","sid":"3faefa","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
 {"ts":"2026-11-17T01:23+08:00","sid":"3faefa","evt":"self_check","dur_ms":10.21,"ok":true,"meta":{"sample":2}}
 {"ts":"2026-11-17T01:23+08:00","sid":"3faefa","evt":"daily_run_end","dur_ms":47.19,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
+{"ts":"2026-11-17T01:30+08:00","sid":"5b1dd8","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-17T01:30+08:00","sid":"5b1dd8","evt":"self_check","dur_ms":10.45,"ok":true,"meta":{"sample":2}}
+{"ts":"2026-11-17T01:30+08:00","sid":"5b1dd8","evt":"daily_run_end","dur_ms":28.16,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
