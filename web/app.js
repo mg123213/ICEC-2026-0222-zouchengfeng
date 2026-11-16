@@ -445,6 +445,13 @@ const IS_CLOUD = !["127.0.0.1", "localhost", "::1"].includes(location.hostname);
 if (IS_CLOUD) {
   const mode = $("#foot-mode");
   if (mode) mode.textContent = "线上演示版";
+
+  // 隐私说明必须跟实际处理方式一致，本地版和线上版不是一回事
+  const privacy = $("#privacy-note");
+  if (privacy) privacy.textContent = "原文会经 HTTPS 传到服务器解析，不写入运行日志，也不长期保存。";
+
+  const fbPrivacy = $("#fb-privacy");
+  if (fbPrivacy) fbPrivacy.textContent = "反馈存在云端容器里，重建时可能清空 —— 提交后请复制那份记录备份。";
 }
 
 $("#btn-feedback").addEventListener("click", async () => {
