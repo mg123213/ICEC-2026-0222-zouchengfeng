@@ -77,8 +77,15 @@ _LOC_STOP = set("至在到于往前将的把向从和与及、，。；：！？
 
 # 地点提示语：有这些词的句子优先
 _LOCATION_HINT = re.compile(
-    r"地点|地址|交至|提交至|报送至|送至|前往|集合|"
+    r"地点|地址|交至|提交至|报送至|送至|递交|前往|集合|"
     r"[到在]\s*[\u4e00-\u9fa5A-Za-z0-9]{0,8}(?:楼|室|馆|厅|中心|校区)"
+)
+
+# 提交语境：整篇没有这类动作时，说明它不是在叫人去哪儿交东西，
+# 此时不应输出「提交地点」（例如「图书馆延长开放时间」里的图书馆）
+_SUBMIT_ACTION = re.compile(
+    r"交至|提交|上交|报送|送至|递交|前往|集合|领取|办理|"
+    r"[到在]\s*[\u4e00-\u9fa5A-Za-z0-9]{0,8}(?:楼|室|馆|厅)"
 )
 
 # 太泛的地点名，有更好的候选时应跳过
@@ -249,6 +256,9 @@ def _location_candidates(text: str) -> List[Tuple[str, int, int]]:
 
 def _extract_location(text: str) -> Optional[str]:
     """抽取提交/集合地点。优先取带「交至/在……集合」提示语的那一句。"""
+    if not _SUBMIT_ACTION.search(text):
+        return None
+
     hinted: List[str] = []
     plain: List[str] = []
 

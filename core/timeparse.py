@@ -126,6 +126,9 @@ class TimeCandidate:
     confidence: float
     kind: str
     has_clock: bool
+    date_end: int = 0              # 日期部分本身的结束位置（不含绑定的时刻）
+    is_range_start: bool = False   # 「11月18日至11月22日」中的前者
+    is_range_end: bool = False     # 区间终点，更像截止时间
 
     def to_dict(self) -> dict:
         return {
@@ -134,6 +137,7 @@ class TimeCandidate:
             "kind": self.kind,
             "confidence": round(self.confidence, 2),
             "has_clock": self.has_clock,
+            "range_start": self.is_range_start,
         }
 
 
@@ -173,6 +177,9 @@ def _safe_date(year: int, month: int, day: int) -> Optional[datetime]:
 
 def _resolve_clock(ampm: Optional[str], hour: int, minute: int) -> Optional[tuple]:
     """把「下午5点」「晚上8点」修正为 24 小时制。返回 (h, m) 或 None。"""
+    # 「24:00」是通知里常见的当日结束写法，按 23:59 处理更符合用户直觉
+    if hour == 24 and minute == 0:
+        return 23, 59
     if hour > 23 or minute > 59:
         return None
     if ampm in ("下午", "傍晚", "晚间"):
@@ -304,10 +311,40 @@ def find_candidates(text: str, now: Optional[datetime] = None) -> List[TimeCandi
             results.append(TimeCandidate(
                 dt=base, start=match.start(), end=span_end,
                 raw=raw, confidence=min(conf, 0.99), kind=kind, has_clock=has_clock,
+                date_end=match.end(),
             ))
 
     results.sort(key=lambda c: c.start)
+    _link_ranges(norm, results)
     return results
+
+
+# 「11月18日9:00至11月22日24:00」这类区间的连接符
+_RANGE_CONNECTOR = re.compile(r"^\s*(?:至|到|持续到|截止到|—|－|-|~|～|–)+\s*$")
+
+
+def _link_ranges(text: str, candidates: List[TimeCandidate]) -> None:
+    """把 「A 至 B」 标记为区间，避免把开始时间当成截止时间。
+
+    v0.1.0 在「选课时间为11月18日9:00至11月22日24:00」上取到了 11-18 09:00，
+    这是最容易被用户直接照做、从而错过截止的一类错误，必须专门处理。
+    """
+    for prev, nxt in zip(candidates, candidates[1:]):
+        if prev.end > nxt.start:
+            continue
+        if _RANGE_CONNECTOR.match(text[prev.end:nxt.start]):
+            prev.is_range_start = True
+            nxt.is_range_end = True
+
+
+# 起始语：「自 11 月 20 日起」是事件的开始，不是截止
+_START_BEFORE = re.compile(r"(?:自|从)\s*$")
+_START_AFTER = re.compile(r"^\s*(?:起|开始|起算)")
+_END_AFTER = re.compile(r"^\s*(?:止|截止)")
+
+# 事件安排语：「补考定于11月28日进行」是考试时间，不是要交东西的截止
+_EVENT_BEFORE = re.compile(r"(?:定于|将于|安排在|计划于|拟于)\s*$")
+_EVENT_AFTER = re.compile(r"^\s*(?:举行|进行|开始|开幕|开展|举办|召开|当天)")
 
 
 def _anchor_spans(text: str):
@@ -317,7 +354,7 @@ def _anchor_spans(text: str):
     return strong, weak
 
 
-def _score(cand: TimeCandidate, strong, weak, now: datetime) -> float:
+def _score(cand: TimeCandidate, text: str, strong, weak, now: datetime) -> float:
     score = cand.confidence
 
     if strong:
@@ -331,6 +368,23 @@ def _score(cand: TimeCandidate, strong, weak, now: datetime) -> float:
         if dist <= 10:
             score += 0.10
 
+    # 区间的结束端更像截止时间，开始端几乎不是
+    if cand.is_range_end:
+        score += 0.15
+    elif cand.is_range_start:
+        score -= 0.50
+
+    # 上下文语义：「自……起」是起始，「……止」是结束，「定于……举行」是活动时间
+    before = text[max(0, cand.start - 8):cand.start]
+    anchor = cand.date_end or cand.end
+    after = text[anchor:anchor + 8]
+    if _START_BEFORE.search(before) or _START_AFTER.search(after):
+        score -= 0.45
+    if _END_AFTER.search(after):
+        score += 0.20
+    if _EVENT_BEFORE.search(before) or _EVENT_AFTER.search(after):
+        score -= 0.50
+
     # 时间必须落在未来（或就在今天）；已经过去的多半是发布日期
     delta_hours = (cand.dt - now).total_seconds() / 3600
     if delta_hours >= 0:
@@ -340,6 +394,25 @@ def _score(cand: TimeCandidate, strong, weak, now: datetime) -> float:
     else:
         score -= 0.70
     return score
+
+
+def _negative_flags(cand: TimeCandidate, text: str) -> List[str]:
+    """判断一个候选是否带「这不是截止时间」的语义信号。
+
+    三类：起始语（自……起）、活动安排语（定于……举行）、区间起点（A 至 B 的 A）。
+    这些位置上的时间几乎都不是学生需要卡的那个截止时刻。
+    """
+    before = text[max(0, cand.start - 8):cand.start]
+    anchor = cand.date_end or cand.end
+    after = text[anchor:anchor + 8]
+    flags: List[str] = []
+    if _START_BEFORE.search(before) or _START_AFTER.search(after):
+        flags.append("start_phrase")
+    if _EVENT_BEFORE.search(before) or _EVENT_AFTER.search(after):
+        flags.append("event_phrase")
+    if cand.is_range_start:
+        flags.append("range_start")
+    return flags
 
 
 def extract_deadline(
@@ -357,7 +430,22 @@ def extract_deadline(
         return None
 
     strong, weak = _anchor_spans(norm)
-    scored = [(c, _score(c, strong, weak, now)) for c in candidates]
+
+    def _near_strong(cand: TimeCandidate) -> bool:
+        """附近 15 字内有没有「截止/不晚于/请于」这类强锚点。
+
+        有锚点时才允许推翻负向信号 —— 例如「报名截止定于11月20日」，
+        虽然带「定于」，但明确写了截止，应以它为准。
+        """
+        return any(abs(cand.start - pos) <= 15 for pos in strong)
+
+    usable = [c for c in candidates if not _negative_flags(c, norm) or _near_strong(c)]
+    if not usable:
+        # 全文的时间都是活动安排或起始时间，说明这条通知没写提交截止，
+        # 宁可返回 None 让用户自己看一眼，也不给一个会被照做的错误日期
+        return None
+
+    scored = [(c, _score(c, norm, strong, weak, now)) for c in usable]
     best, best_score = max(scored, key=lambda item: item[1])
 
     if best_score < min_score:
