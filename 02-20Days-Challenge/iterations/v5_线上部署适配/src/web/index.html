@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园通知雷达 · 深技师</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">雷</div>
+    <div class="brand-text">
+      <h1>校园通知雷达</h1>
+      <p>把群消息和通知贴进来，自动挑出截止时间、地点和要交的材料</p>
+    </div>
+  </div>
+  <div class="runtime" id="runtime">
+    <div class="rt-item"><span class="rt-num" id="stat-events">–</span><span class="rt-label">今日调用</span></div>
+    <div class="rt-item"><span class="rt-num" id="stat-avg">–</span><span class="rt-label">平均耗时</span></div>
+    <div class="rt-item"><span class="rt-num" id="stat-err">–</span><span class="rt-label">错误数</span></div>
+    <div class="rt-item"><span class="rt-num" id="stat-days">–</span><span class="rt-label">日志天数</span></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-panel="parse">通知解析</button>
+  <button class="tab" data-panel="tasks">我的待办 <span class="badge" id="task-count">0</span></button>
+  <button class="tab" data-panel="inventory">器材核对</button>
+  <button class="tab" data-panel="feedback">使用反馈</button>
+</nav>
+
+<main>
+  <!-- ============ 解析 ============ -->
+  <section class="panel active" id="panel-parse">
+    <div class="split">
+      <div class="card input-card">
+        <div class="card-head">
+          <h2>粘贴通知原文</h2>
+          <button class="link-btn" id="btn-sample">填入示例</button>
+        </div>
+        <textarea id="notice-text" placeholder="把班级群消息、公众号推文、官网通知粘到这里……
+支持口语化写法，例如：本周五下午4点半在实训楼B305集合，带学生证"></textarea>
+        <div class="row">
+          <span class="hint" id="char-count">0 字</span>
+          <div class="row-right">
+            <button class="btn ghost" id="btn-clear">清空</button>
+            <button class="btn primary" id="btn-parse">解析通知</button>
+          </div>
+        </div>
+        <p class="privacy">原文只在本机处理，不上传任何服务器。</p>
+      </div>
+
+      <div class="card result-card" id="result-card">
+        <div class="empty" id="result-empty">
+          <p>解析结果会显示在这里</p>
+          <span>截止时间 · 提交地点 · 材料清单 · 联系人 · 待办动作</span>
+        </div>
+        <div id="result-body" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 待办 ============ -->
+  <section class="panel" id="panel-tasks">
+    <div class="card">
+      <div class="card-head">
+        <h2>待办清单</h2>
+        <div class="row-right">
+          <button class="btn ghost" id="btn-ics">导出日历</button>
+          <button class="btn ghost" id="btn-refresh-tasks">刷新</button>
+        </div>
+      </div>
+      <div id="task-list" class="task-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ 器材 ============ -->
+  <section class="panel" id="panel-inventory">
+    <div class="card">
+      <div class="card-head">
+        <h2>实训器材借还核对</h2>
+        <button class="link-btn" id="btn-inv-sample">填入示例</button>
+      </div>
+      <p class="hint">从 Excel 直接复制两列粘贴即可，表头需包含「编号 / 器材 / 借用人 / 数量 / 借出日期 / 应还日期」。</p>
+      <div class="split tight">
+        <div>
+          <label class="field-label">借出登记表</label>
+          <textarea id="lent-text" class="tall" placeholder="编号,器材,借用人,数量,借出日期,应还日期"></textarea>
+        </div>
+        <div>
+          <label class="field-label">归还登记表</label>
+          <textarea id="returned-text" class="tall" placeholder="编号,器材,借用人,数量,归还日期"></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <span class="hint" id="inv-status"></span>
+        <button class="btn primary" id="btn-check-inv">开始核对</button>
+      </div>
+    </div>
+    <div class="card" id="inv-result-card" hidden>
+      <div class="card-head">
+        <h2>核对结果</h2>
+        <button class="btn ghost" id="btn-export-inv">导出 CSV</button>
+      </div>
+      <div id="inv-summary" class="mini-stats"></div>
+      <div class="table-wrap"><table id="inv-table"></table></div>
+      <div class="reminder-box">
+        <div class="card-head"><h3>催还话术（可直接发群）</h3></div>
+        <pre id="inv-message"></pre>
+        <button class="btn ghost small" id="btn-copy-msg">复制</button>
+      </div>
+      <div id="inv-anomalies"></div>
+    </div>
+  </section>
+
+  <!-- ============ 反馈 ============ -->
+  <section class="panel" id="panel-feedback">
+    <div class="card narrow">
+      <div class="card-head">
+        <h2>用一句话换我一次改进</h2>
+        <span class="hint" id="fb-count"></span>
+      </div>
+      <p class="hint">反馈只存在本机 feedback/responses.jsonl，不留姓名和联系方式。</p>
+      <label class="field-label">你的身份</label>
+      <select id="fb-role">
+        <option>班长 / 团支书</option>
+        <option>学习委员</option>
+        <option>普通同学</option>
+        <option>实训室管理员</option>
+        <option>班主任 / 辅导员</option>
+        <option>其他</option>
+      </select>
+
+      <label class="field-label">整体打分</label>
+      <div class="stars" id="fb-stars">
+        <button data-score="1">★</button><button data-score="2">★</button>
+        <button data-score="3">★</button><button data-score="4">★</button>
+        <button data-score="5">★</button>
+        <span id="fb-score-label">未评分</span>
+      </div>
+
+      <label class="field-label">哪些功能真的用上了</label>
+      <div class="chips" id="fb-useful">
+        <label class="chip"><input type="checkbox" value="截止时间提取"><span>截止时间提取</span></label>
+        <label class="chip"><input type="checkbox" value="材料清单"><span>材料清单</span></label>
+        <label class="chip"><input type="checkbox" value="地点识别"><span>地点识别</span></label>
+        <label class="chip"><input type="checkbox" value="日历导出"><span>日历导出</span></label>
+        <label class="chip"><input type="checkbox" value="器材核对"><span>器材核对</span></label>
+        <label class="chip"><input type="checkbox" value="催还话术"><span>催还话术</span></label>
+      </div>
+
+      <label class="field-label">哪里不好用 / 希望加什么</label>
+      <textarea id="fb-comment" placeholder="例如：群消息里「下周三之前」这种说法识别不出来"></textarea>
+
+      <label class="checkline">
+        <input type="checkbox" id="fb-would" checked>
+        <span>愿意在接下来的课程里继续用它</span>
+      </label>
+
+      <button class="btn primary wide" id="btn-feedback">提交反馈</button>
+      <p class="hint" id="fb-thanks" hidden>已记录，谢谢。</p>
+      <div id="fb-echo-wrap" hidden>
+        <p class="hint">已收到。线上环境重建后数据可能清空，建议点一下复制，把这条发给项目组备份。</p>
+        <pre id="fb-echo" class="feedback-echo"></pre>
+        <button class="btn ghost small" id="btn-copy-fb">复制这条反馈</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>校园通知雷达 <strong id="version">v0.1.0</strong> · <span id="foot-mode">纯本地运行</span> · 无第三方依赖</span>
+  <span id="foot-stat"></span>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

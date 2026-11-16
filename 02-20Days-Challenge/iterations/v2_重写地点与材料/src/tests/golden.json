@@ -1,0 +1,54 @@
+{
+  "_note": "评测用标准答案。日期基于 2026-11-17（周二）计算，评测时固定 now=2026-11-17T00:40。",
+  "_now": "2026-11-17T00:40:00",
+  "cases": {
+    "01_困难补助": {
+      "deadline": "2026-11-21 17:00",
+      "location": "行政楼302室",
+      "materials": ["学生困难补助申请表", "身份证复印件", "成绩单", "家庭经济困难佐证材料"],
+      "no_deadline": false
+    },
+    "02_群消息口语": {
+      "deadline": "2026-11-20 12:00",
+      "location": "实训楼B305",
+      "materials": ["学生证"],
+      "no_deadline": false
+    },
+    "03_世赛选拔": {
+      "deadline": "2026-11-25 18:00",
+      "location": "",
+      "materials": ["一寸照片"],
+      "no_deadline": false
+    },
+    "04_线上选课": {
+      "deadline": "2026-11-22 23:59",
+      "location": "",
+      "materials": [],
+      "no_deadline": false
+    },
+    "05_补考安排": {
+      "deadline": null,
+      "location": "",
+      "materials": ["学生证", "黑色签字笔"],
+      "no_deadline": true
+    },
+    "06_器材借用": {
+      "deadline": "2026-11-18 23:59",
+      "location": "实训楼A102",
+      "materials": [],
+      "no_deadline": false
+    },
+    "07_文体艺术节": {
+      "deadline": "2026-11-20 20:00",
+      "location": "团委办公室",
+      "materials": [],
+      "no_deadline": false
+    },
+    "08_图书馆延时": {
+      "deadline": null,
+      "location": "",
+      "materials": [],
+      "no_deadline": true
+    }
+  }
+}

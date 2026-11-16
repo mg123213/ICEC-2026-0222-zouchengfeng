@@ -4,9 +4,9 @@ __pycache__/
 .venv/
 venv/
 
-# 本机通知原文，含个人隐私，不入库
-data/notes/
-data/tasks.tmp
+# 本机通知原文，含个人隐私，不入库（src 在二级目录下，用 ** 匹配）
+**/data/notes/
+**/data/tasks.tmp
 *.broken.json
 
 # 编辑器与系统

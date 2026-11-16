@@ -103,3 +103,14 @@
 {"ts":"2026-11-17T00:59+08:00","sid":"64366c","evt":"submit_feedback","ok":true,"meta":{"score":4,"role":"普通同学","source":"cloud","degraded":false}}
 {"ts":"2026-11-17T01:01+08:00","sid":"f3bf1c","evt":"app_start","ok":true,"meta":{"version":"0.4.0","route":"boot"}}
 {"ts":"2026-11-17T01:02+08:00","sid":"2ec8ea","evt":"app_start","ok":true,"meta":{"version":"0.4.0","route":"cloud"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"924ad1","evt":"eval_case","dur_ms":2.94,"ok":true,"meta":{"chars":224,"source":"01_困难补助"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"924ad1","evt":"eval_case","dur_ms":0.92,"ok":true,"meta":{"chars":88,"source":"02_群消息口语"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"924ad1","evt":"eval_case","dur_ms":0.45,"ok":true,"meta":{"chars":206,"source":"03_世赛选拔"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"924ad1","evt":"eval_case","dur_ms":0.31,"ok":true,"meta":{"chars":110,"source":"04_线上选课"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"924ad1","evt":"eval_case","dur_ms":0.29,"ok":true,"meta":{"chars":128,"source":"05_补考安排"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"924ad1","evt":"eval_case","dur_ms":0.3,"ok":true,"meta":{"chars":62,"source":"06_器材借用"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"924ad1","evt":"eval_case","dur_ms":0.42,"ok":true,"meta":{"chars":184,"source":"07_文体艺术节"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"924ad1","evt":"eval_case","dur_ms":0.23,"ok":true,"meta":{"chars":85,"source":"08_图书馆延时"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"3faefa","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-17T01:23+08:00","sid":"3faefa","evt":"self_check","dur_ms":10.21,"ok":true,"meta":{"sample":2}}
+{"ts":"2026-11-17T01:23+08:00","sid":"3faefa","evt":"daily_run_end","dur_ms":47.19,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
