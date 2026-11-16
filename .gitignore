@@ -18,3 +18,7 @@ desktop.ini
 
 # 无头浏览器截图用的临时用户目录
 .edge-tmp/
+
+# 发布平台生成的内部追踪文件与本地工作记忆，不进公开仓库
+.wbapp_*.genie
+.workbuddy/
