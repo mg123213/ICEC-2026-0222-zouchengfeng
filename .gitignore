@@ -1,20 +1,28 @@
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
 venv/
 
+# 系统
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# 编辑器 / IDE
+.idea/
+.vscode/
+*.swp
+
+# 临时文件
+*.tmp
+~$*
+
 # 本机通知原文，含个人隐私，不入库（src 在二级目录下，用 ** 匹配）
 **/data/notes/
 **/data/tasks.tmp
 *.broken.json
-
-# 编辑器与系统
-.idea/
-.vscode/
-.DS_Store
-Thumbs.db
-desktop.ini
 
 # 无头浏览器截图用的临时用户目录
 .edge-tmp/
