@@ -137,6 +137,8 @@ ICEC-2026-0222-zouchengfeng/
 
 ## 四、快速查看
 
+### 课题 08 · 多姿态步态
+
 | 想看的 | 点这里 |
 |---|---|
 | 四状态波形对比 | [图1](01-Field-Discovery/课题08-多姿态步态识别/report/figures/图1_四状态三轴波形.png) |
@@ -144,11 +146,24 @@ ICEC-2026-0222-zouchengfeng/
 | 判定流程图 | [图3](01-Field-Discovery/课题08-多姿态步态识别/report/figures/图3_判定流程.png) |
 | 70 个窗口逐窗验证 | [图4](01-Field-Discovery/课题08-多姿态步态识别/report/figures/图4_滑窗判定结果.png) |
 | 原始波形数据 | [`01-Field-Discovery/课题08-多姿态步态识别/raw_data/`](01-Field-Discovery/课题08-多姿态步态识别/raw_data/) |
+| 主报告 | [`课题08_阈值规则说明.md`](01-Field-Discovery/课题08-多姿态步态识别/report/课题08_阈值规则说明.md) |
 
 原始 CSV 与 Phyphox 导出的 `Raw Data.csv` **逐字节一致**（MD5 校验），仅重命名。
 列声明：`Time (s)` / `Linear Acceleration x,y,z (m/s^2)` / `Absolute acceleration (m/s^2)`，
 采样率 **208.2 Hz**，单段约 10 s。注意这是**已去重力**的线性加速度，
 末列最小值为 0、曲线围绕 0 摆动，没有 ±9.8 的重力基线。
+
+### 课题 10 · 耗时审计
+
+| 想看的 | 点这里 |
+|---|---|
+| 人机耗时对比图 | [图1_耗时对比.png](01-Field-Discovery/课题10-数字任务耗时审计/out/图1_耗时对比.png) |
+| 耗时对比表 | [`out/耗时对比表.csv`](01-Field-Discovery/课题10-数字任务耗时审计/out/耗时对比表.csv) |
+| 逐字段校验明细 | [`out/校验明细.csv`](01-Field-Discovery/课题10-数字任务耗时审计/out/校验明细.csv) |
+| 10 个任务样本 | [`samples/`](01-Field-Discovery/课题10-数字任务耗时审计/samples/) |
+| 人机校验规则 | [`人机校验规则.md`](01-Field-Discovery/课题10-数字任务耗时审计/人机校验规则.md) |
+| 完整报告 | [`报告.md`](01-Field-Discovery/课题10-数字任务耗时审计/报告.md) |
+| AI 提示词记录 | [`prompt.md`](01-Field-Discovery/课题10-数字任务耗时审计/prompt.md) |
 
 ---
 
@@ -174,7 +189,9 @@ python scripts/screening.py     # 重算 表3（候选特征可分性排序）
 
 ## 六、进度
 
-- [x] **阶段一 · Field Discovery** — 课题08 步态阈值规则 + 课题10 耗时审计与 AI 批处理实证
+- [x] **阶段一 · Field Discovery** — 两个独立课题，均已交付
+  - [x] 课题 08：多姿态步态加速度特征采集与对比（[目录](01-Field-Discovery/课题08-多姿态步态识别/)）
+  - [x] 课题 10：日常数字任务耗时审计与 AI 批处理实证（[目录](01-Field-Discovery/课题10-数字任务耗时审计/)）
 - [ ] **阶段二 · 20 Days Challenge** — 进行中
   - [x] Day 1：选题、v1~v5 迭代、部署上线（[日志](02-20Days-Challenge/process_logs/2026-11-17.md)）
   - [ ] Day 2~：日志累积到 7 天以上、8 位同学试用反馈、按反馈再迭代
