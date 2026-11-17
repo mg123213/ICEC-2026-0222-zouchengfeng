@@ -137,3 +137,9 @@
 {"ts":"2026-11-17T12:47+08:00","sid":"8367e6","evt":"eval_case","dur_ms":0.26,"ok":true,"meta":{"chars":62,"source":"06_器材借用"}}
 {"ts":"2026-11-17T12:47+08:00","sid":"8367e6","evt":"eval_case","dur_ms":0.45,"ok":true,"meta":{"chars":184,"source":"07_文体艺术节"}}
 {"ts":"2026-11-17T12:47+08:00","sid":"8367e6","evt":"eval_case","dur_ms":0.35,"ok":true,"meta":{"chars":85,"source":"08_图书馆延时"}}
+{"ts":"2026-11-17T13:38+08:00","sid":"001555","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-17T13:38+08:00","sid":"001555","evt":"self_check","dur_ms":12.3,"ok":true,"meta":{"sample":2}}
+{"ts":"2026-11-17T13:38+08:00","sid":"001555","evt":"daily_run_end","dur_ms":36.41,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
+{"ts":"2026-11-17T13:39+08:00","sid":"31212c","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-17T13:39+08:00","sid":"31212c","evt":"self_check","dur_ms":10.13,"ok":true,"meta":{"sample":2}}
+{"ts":"2026-11-17T13:39+08:00","sid":"31212c","evt":"daily_run_end","dur_ms":11.83,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
