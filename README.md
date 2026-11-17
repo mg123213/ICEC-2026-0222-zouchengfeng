@@ -59,7 +59,7 @@
 | | |
 |---|---|
 | 源码 | [`02-20Days-Challenge/src/`](02-20Days-Challenge/src/) |
-| 在线版 | <https://wbapp-afaouz2pxzdkqew3f4th4r.app.workbuddy.host/?sharecode=YBY6WAHAYJ> |
+| 在线版 | <https://wbapp-b57fhwpr7sd7umxxjlmtff.app.workbuddy.host/?sharecode=CUQ24FLKNH> |
 | 过程日志 | [`02-20Days-Challenge/process_logs/`](02-20Days-Challenge/process_logs/) |
 | 迭代留档 | [`02-20Days-Challenge/iterations/`](02-20Days-Challenge/iterations/) |
 

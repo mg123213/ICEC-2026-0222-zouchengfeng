@@ -69,7 +69,7 @@
   JSON 记录，提交者发回来即可补录到本机 `feedback/responses.jsonl`。
 - 页脚按环境显示「纯本地运行」或「线上演示版」。
 
-**线上地址**：<https://wbapp-afaouz2pxzdkqew3f4th4r.app.workbuddy.host/?sharecode=YBY6WAHAYJ>
+**线上地址**：<https://wbapp-b57fhwpr7sd7umxxjlmtff.app.workbuddy.host/?sharecode=CUQ24FLKNH>
 
 > 线上版和本地版是同一份代码，行为差异只有存储位置与监听地址。
 > 作业要求的连续运行日志仍然只由本机产生 —— 云端容器里的日志不会回流到仓库。

@@ -3,7 +3,7 @@
 > 状态：**进行中** · 选题「校园通知雷达」——把班级群/公众号的通知粘进来，
 > 自动抽截止时间、地点、材料清单，存待办并导出日历；附带实训器材借还核对。
 
-**在线版**：<https://wbapp-afaouz2pxzdkqew3f4th4r.app.workbuddy.host/?sharecode=YBY6WAHAYJ>
+**在线版**：<https://wbapp-b57fhwpr7sd7umxxjlmtff.app.workbuddy.host/?sharecode=CUQ24FLKNH>
 
 ## 目录约定
 

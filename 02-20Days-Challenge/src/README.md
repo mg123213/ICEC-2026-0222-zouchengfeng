@@ -9,7 +9,7 @@
 **多用户**：每人用学号注册一个账号，登录后只看得到自己的待办与反馈；
 管理员（`2024400222`）可以另开一个后台看全局数据。密码存 PBKDF2 哈希，库里没有明文。
 
-> **在线体验**：<https://wbapp-afaouz2pxzdkqew3f4th4r.app.workbuddy.host/?sharecode=YBY6WAHAYJ>
+> **在线体验**：<https://wbapp-b57fhwpr7sd7umxxjlmtff.app.workbuddy.host/?sharecode=CUQ24FLKNH>
 
 ---
 
