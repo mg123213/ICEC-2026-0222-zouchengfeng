@@ -15,7 +15,7 @@
 
 | 课题 | 主题 | 位置 |
 | --- | --- | --- |
-| 课题 08 | 多姿态步态加速度特征采集与对比 | [`01-Field-Discovery/`](01-Field-Discovery/) |
+| 课题 08 | 多姿态步态加速度特征采集与对比 | [`01-Field-Discovery/课题08-多姿态步态识别/`](01-Field-Discovery/课题08-多姿态步态识别/) |
 | 课题 10 | 日常数字任务耗时审计与 AI 批处理实证 | [`01-Field-Discovery/课题10-数字任务耗时审计/`](01-Field-Discovery/课题10-数字任务耗时审计/) |
 
 ### 课题 08：多姿态步态加速度特征采集与对比
@@ -48,7 +48,7 @@
 1 s 窗下 76/78，两个误判都出现在起跑加速与收尾减速的过渡段——不是规则失效，
 而是那两段确实处于两种动作之间。
 
-完整分析见 [`01-Field-Discovery/report/课题08_阈值规则说明.md`](01-Field-Discovery/report/课题08_阈值规则说明.md)。
+完整分析见 [`01-Field-Discovery/课题08-多姿态步态识别/report/课题08_阈值规则说明.md`](01-Field-Discovery/课题08-多姿态步态识别/report/课题08_阈值规则说明.md)。
 
 ### 课题 10：日常数字任务耗时审计与 AI 批处理实证
 
@@ -105,12 +105,14 @@
 ```
 ICEC-2026-0222-zouchengfeng/
 ├── README.md                     # 本文件：个人简介与选题说明
-├── 01-Field-Discovery/           # 阶段一：现场发现（两个课题）
-│   ├── report/                   #   课题08：分析报告 + 图表 + 统计表
-│   ├── photos/                   #   课题08：Phyphox 采集界面截图
-│   ├── raw_data/                 #   课题08：4 份原始 CSV 波形 + 合并表
-│   ├── scripts/                  #   课题08：分析与特征筛查脚本
-│   └── 课题10-数字任务耗时审计/   #   课题10：耗时审计与 AI 批处理实证
+├── 01-Field-Discovery/           # 阶段一：现场发现（两个独立课题）
+│   ├── README.md                 #   阶段一导览：两个课题的关系与入口
+│   ├── 课题08-多姿态步态识别/     #   课题08：步态加速度 → 阈值规则
+│   │   ├── report/               #     主报告 + 4 张图 + 3 张统计表
+│   │   ├── photos/               #     Phyphox 采集界面截图
+│   │   ├── raw_data/             #     4 份原始 CSV 波形 + 合并表
+│   │   └── scripts/              #     复现脚本
+│   └── 课题10-数字任务耗时审计/   #   课题10：人机耗时对比 + 校验规则
 ├── 02-20Days-Challenge/          # 阶段二：20 天挑战（校园通知雷达）
 │   ├── src/                      #   源码，可直接跑
 │   │   ├── app.py                #     本地服务入口（标准库 http.server）
@@ -137,11 +139,11 @@ ICEC-2026-0222-zouchengfeng/
 
 | 想看的 | 点这里 |
 |---|---|
-| 四状态波形对比 | [图1](01-Field-Discovery/report/figures/图1_四状态三轴波形.png) |
-| 特征空间与阈值线 | [图2](01-Field-Discovery/report/figures/图2_特征分布与阈值.png) |
-| 判定流程图 | [图3](01-Field-Discovery/report/figures/图3_判定流程.png) |
-| 70 个窗口逐窗验证 | [图4](01-Field-Discovery/report/figures/图4_滑窗判定结果.png) |
-| 原始波形数据 | [`01-Field-Discovery/raw_data/`](01-Field-Discovery/raw_data/) |
+| 四状态波形对比 | [图1](01-Field-Discovery/课题08-多姿态步态识别/report/figures/图1_四状态三轴波形.png) |
+| 特征空间与阈值线 | [图2](01-Field-Discovery/课题08-多姿态步态识别/report/figures/图2_特征分布与阈值.png) |
+| 判定流程图 | [图3](01-Field-Discovery/课题08-多姿态步态识别/report/figures/图3_判定流程.png) |
+| 70 个窗口逐窗验证 | [图4](01-Field-Discovery/课题08-多姿态步态识别/report/figures/图4_滑窗判定结果.png) |
+| 原始波形数据 | [`01-Field-Discovery/课题08-多姿态步态识别/raw_data/`](01-Field-Discovery/课题08-多姿态步态识别/raw_data/) |
 
 原始 CSV 与 Phyphox 导出的 `Raw Data.csv` **逐字节一致**（MD5 校验），仅重命名。
 列声明：`Time (s)` / `Linear Acceleration x,y,z (m/s^2)` / `Absolute acceleration (m/s^2)`，
@@ -158,7 +160,7 @@ ICEC-2026-0222-zouchengfeng/
 ```bash
 pip install numpy pandas matplotlib scipy
 
-cd 01-Field-Discovery
+cd 01-Field-Discovery/课题08-多姿态步态识别
 python scripts/analyze.py       # 重算 表1/表2 与四张图
 python scripts/screening.py     # 重算 表3（候选特征可分性排序）
 ```
