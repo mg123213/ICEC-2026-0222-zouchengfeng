@@ -67,7 +67,7 @@ _ALLOWED_META_KEYS = {
     "located", "contact", "tags", "elapsed_source", "warnings", "mode",
     "rows", "diff_rows", "matched", "unmatched", "route", "ua_bucket",
     "task_id", "score", "role", "degraded", "cache", "retry", "bytes",
-    "sample", "ok_count", "fail_count", "source",
+    "sample", "ok_count", "fail_count", "source", "uid", "page", "action",
 }
 
 _SCRUB_RULES = (

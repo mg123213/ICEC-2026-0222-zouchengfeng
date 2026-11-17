@@ -1,4 +1,4 @@
-/* 校园通知雷达 —— 前端交互（原生 JS，无依赖） */
+/* 校园通知雷达 —— 工作台交互（原生 JS，无依赖） */
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -22,21 +22,63 @@ function withShare(path) {
   return path + (path.includes("?") ? "&" : "?") + "sharecode=" + encodeURIComponent(SHARE_CODE);
 }
 
+/* 线上部署时 hostname 不是回环地址 */
+const IS_CLOUD = !["127.0.0.1", "localhost", "::1"].includes(location.hostname);
+if (IS_CLOUD) {
+  const mode = $("#foot-mode");
+  if (mode) mode.textContent = "线上版";
+  const privacy = $("#privacy-note");
+  if (privacy) privacy.textContent = "原文会经 HTTPS 传到服务器解析，不写入运行日志。";
+  const fbPrivacy = $("#fb-privacy");
+  if (fbPrivacy) fbPrivacy.textContent = "反馈存在云端，重建时可能清空 —— 提交后请复制备份。";
+}
+
 async function api(path, options = {}) {
   const res = await fetch(withShare(path), {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
+  if (res.status === 401) {
+    location.reload();          // 会话过期：回到登录页
+    throw new Error("未登录");
+  }
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json();
 }
+
+/* ------------------------------------------------------------ 当前用户 */
+let ME = null;
+
+async function loadMe() {
+  try {
+    const data = await api("/api/me");
+    ME = data;
+    $("#user-id").textContent = data.student_id;
+    $("#user-avatar").textContent = data.student_id.slice(-2);
+    if (data.role === "admin") {
+      $("#role-tag").hidden = false;
+      const link = $("#admin-link");
+      link.hidden = false;
+      link.href = "/admin" + (SHARE_CODE ? "?sharecode=" + encodeURIComponent(SHARE_CODE) : "");
+    }
+  } catch {
+    /* 失败时由 401 分支处理 */
+  }
+}
+
+$("#btn-logout").addEventListener("click", async () => {
+  try {
+    await fetch(withShare("/api/logout"), { method: "POST" });
+  } finally {
+    location.reload();
+  }
+});
 
 /* ------------------------------------------------------------ 标签页 */
 function switchTab(name) {
   $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.panel === name));
   $$(".panel").forEach((p) => p.classList.toggle("active", p.id === `panel-${name}`));
   if (name === "tasks") loadTasks();
-  if (name === "feedback") loadFeedbackCount();
 }
 
 $$(".tab").forEach((tab) => {
@@ -84,8 +126,7 @@ $("#btn-inv-sample").addEventListener("click", () => {
 
 /* ------------------------------------------------------------ 字计数 */
 function updateCharCount() {
-  const len = $("#notice-text").value.length;
-  $("#char-count").textContent = `${len} 字`;
+  $("#char-count").textContent = `${$("#notice-text").value.length} 字`;
 }
 $("#notice-text").addEventListener("input", updateCharCount);
 
@@ -94,18 +135,14 @@ $("#btn-clear").addEventListener("click", () => {
   updateCharCount();
   $("#result-body").hidden = true;
   $("#result-empty").hidden = false;
-  currentResult = null;
 });
 
 /* ------------------------------------------------------------ 解析 */
-let currentResult = null;
-
 function deadlineClass(urgency) {
   return { overdue: "overdue", today: "today", soon: "soon", normal: "" }[urgency] ?? "none";
 }
 
 function renderResult(data) {
-  currentResult = data;
   const box = $("#result-body");
   const dl = data.deadline;
 
@@ -121,7 +158,7 @@ function renderResult(data) {
        </div>`
     : `<div class="deadline-box none">
          <div class="deadline-main"><span class="deadline-date">未识别到截止时间</span></div>
-         <div class="deadline-raw">可以先看下方「文中出现的所有时间」，或手动补一个</div>
+         <div class="deadline-raw">可参考下方「文中出现的所有时间」，或手动补一个</div>
        </div>`;
 
   const materialsHtml = data.materials.length
@@ -134,9 +171,7 @@ function renderResult(data) {
     : `<span class="hint">未识别到材料清单</span>`;
 
   const contactsHtml = data.contacts.length
-    ? data.contacts
-        .map((c) => [c.name, c.phone].filter(Boolean).join(" "))
-        .join("、")
+    ? data.contacts.map((c) => [c.name, c.phone].filter(Boolean).join(" ")).join("、")
     : "—";
 
   const warningHtml = data.warnings.length
@@ -159,9 +194,7 @@ function renderResult(data) {
       <dt>材料清单</dt><dd>${materialsHtml}</dd>
       <dt>联系人</dt><dd>${esc(contactsHtml)}</dd>
       <dt>要做的事</dt><dd>${
-        data.actions.length
-          ? data.actions.map((a) => esc(a)).join("<br>")
-          : "—"
+        data.actions.length ? data.actions.map((a) => esc(a)).join("<br>") : "—"
       }</dd>
     </dl>
     ${data.tags.length ? `<div class="chip-list">${data.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : ""}
@@ -192,17 +225,14 @@ async function doParse() {
   btn.disabled = true;
   btn.textContent = "解析中…";
   try {
-    const data = await api("/api/parse", {
-      method: "POST",
-      body: JSON.stringify({ text }),
-    });
+    const data = await api("/api/parse", { method: "POST", body: JSON.stringify({ text }) });
     if (!data.ok) {
       alert(data.error === "empty_input" ? "请先粘贴通知内容" : "解析失败，请重试");
       return;
     }
     renderResult(data);
   } catch (err) {
-    alert("请求失败：" + err.message);
+    if (err.message !== "未登录") alert("请求失败：" + err.message);
   } finally {
     btn.disabled = false;
     btn.textContent = "解析通知";
@@ -229,7 +259,7 @@ async function saveTask() {
       loadTasks();
     }
   } catch (err) {
-    alert("保存失败：" + err.message);
+    if (err.message !== "未登录") alert("保存失败：" + err.message);
   }
 }
 
@@ -237,7 +267,6 @@ async function saveTask() {
 function urgencyOf(deadline) {
   if (!deadline) return "normal";
   const diff = new Date(deadline.replace(" ", "T")).getTime() - Date.now();
-  if (diff < 0) return "urgent";
   if (diff < 24 * 3600e3) return "urgent";
   if (diff < 72 * 3600e3) return "soon";
   return "normal";
@@ -258,10 +287,11 @@ async function loadTasks() {
   const tasks = data.tasks || [];
   const open = tasks.filter((t) => !t.done);
   $("#task-count").textContent = open.length;
+  $("#task-summary").textContent = tasks.length ? `未完成 ${open.length} / 共 ${tasks.length}` : "";
 
   const list = $("#task-list");
   if (!tasks.length) {
-    list.innerHTML = `<div class="empty" style="min-height:180px"><p>还没有待办</p><span>在「通知解析」里保存一条试试</span></div>`;
+    list.innerHTML = `<div class="empty" style="min-height:160px"><p>还没有待办</p><span>在「通知解析」里保存一条试试</span></div>`;
     return;
   }
 
@@ -349,7 +379,7 @@ $("#btn-check-inv").addEventListener("click", async () => {
     renderInventory(data);
     $("#inv-status").textContent = "";
   } catch (err) {
-    $("#inv-status").textContent = "请求失败：" + err.message;
+    if (err.message !== "未登录") $("#inv-status").textContent = "请求失败：" + err.message;
   } finally {
     btn.disabled = false;
     btn.textContent = "开始核对";
@@ -440,20 +470,6 @@ $$("#fb-stars button").forEach((btn) => {
   });
 });
 
-/* 线上部署时 hostname 不是回环地址，反馈要多给一份可带走的副本 */
-const IS_CLOUD = !["127.0.0.1", "localhost", "::1"].includes(location.hostname);
-if (IS_CLOUD) {
-  const mode = $("#foot-mode");
-  if (mode) mode.textContent = "线上演示版";
-
-  // 隐私说明必须跟实际处理方式一致，本地版和线上版不是一回事
-  const privacy = $("#privacy-note");
-  if (privacy) privacy.textContent = "原文会经 HTTPS 传到服务器解析，不写入运行日志，也不长期保存。";
-
-  const fbPrivacy = $("#fb-privacy");
-  if (fbPrivacy) fbPrivacy.textContent = "反馈存在云端容器里，重建时可能清空 —— 提交后请复制那份记录备份。";
-}
-
 $("#btn-feedback").addEventListener("click", async () => {
   if (!fbScore) {
     $("#fb-score-label").textContent = "先点个分吧";
@@ -474,11 +490,8 @@ $("#btn-feedback").addEventListener("click", async () => {
     if (!data.ok) return;
 
     $("#fb-thanks").hidden = false;
-    $("#fb-thanks").textContent = data.persisted
-      ? `已记录，本机累计 ${data.count} 条反馈，谢谢。`
-      : "已收到，谢谢。";
+    $("#fb-thanks").textContent = data.persisted ? "已记录，谢谢。" : "已收到，谢谢。";
 
-    // 云端：给一份可复制的原始记录，容器重建也不至于把反馈弄丢
     const wrap = $("#fb-echo-wrap");
     if (IS_CLOUD || !data.persisted) {
       $("#fb-echo").textContent = data.line || "";
@@ -488,9 +501,9 @@ $("#btn-feedback").addEventListener("click", async () => {
     }
 
     $("#fb-comment").value = "";
-    loadFeedbackCount();
+    loadStats();
   } catch (err) {
-    alert("提交失败：" + err.message);
+    if (err.message !== "未登录") alert("提交失败：" + err.message);
   }
 });
 
@@ -504,60 +517,51 @@ $("#btn-copy-fb").addEventListener("click", async () => {
   }
 });
 
-async function loadFeedbackCount() {
-  try {
-    const data = await api("/api/feedback/count");
-    $("#fb-count").textContent = `已收集 ${data.count} 条`;
-  } catch {
-    /* 计数失败不影响使用 */
-  }
-}
-
 /* ------------------------------------------------------------ 统计 */
 async function loadStats() {
   try {
     const data = await api("/api/stats");
-    const today = data.days[data.days.length - 1] || { events: 0, avg_ms: 0, errors: 0 };
-    $("#stat-events").textContent = today.events;
-    $("#stat-avg").textContent = today.avg_ms ? `${Math.round(today.avg_ms)}ms` : "–";
-    $("#stat-err").textContent = today.errors;
-    $("#stat-days").textContent = data.totals.days;
-    $("#foot-stat").textContent = `累计 ${data.totals.events} 次调用 · 日志 ${data.log_dir}/`;
+    $("#task-count").textContent = data.open_tasks;
+    $("#fb-count").textContent = data.my_feedback ? `已提交 ${data.my_feedback} 条` : "";
+    $("#foot-stat").textContent = data.nearest_deadline
+      ? `最近截止：${data.nearest_deadline}`
+      : "暂无临近截止的待办";
   } catch {
-    /* 首屏统计失败不阻塞主流程 */
+    /* 统计失败不影响主流程 */
   }
 }
 
-async function loadVersion() {
+/* ------------------------------------------------------------ 启动 */
+async function boot() {
+  await loadMe();
+  updateCharCount();
+  loadTasks();
+  loadStats();
+  setInterval(loadStats, 60000);
+
+  const params = new URLSearchParams(location.search);
+  const startTab = params.get("tab");
+  if (startTab) switchTab(startTab);
+
+  if (params.get("demo") === "1") {
+    if (!startTab || startTab === "parse") {
+      $("#notice-text").value = SAMPLE_NOTICE;
+      updateCharCount();
+      setTimeout(doParse, 300);
+    }
+    if (startTab === "inventory") {
+      $("#lent-text").value = SAMPLE_LENT;
+      $("#returned-text").value = SAMPLE_RETURNED;
+      setTimeout(() => $("#btn-check-inv").click(), 250);
+    }
+  }
+
   try {
-    const data = await api("/api/health");
-    $("#version").textContent = "v" + data.version;
+    const health = await fetch(withShare("/api/health")).then((r) => r.json());
+    $("#version").textContent = "v" + health.version;
   } catch {
-    /* 版本号取不到就保留页面里的占位 */
+    /* 版本号取不到就保留占位 */
   }
 }
 
-updateCharCount();
-loadVersion();
-loadStats();
-loadTasks();
-setInterval(loadStats, 30000);
-
-/* 演示模式：?demo=1 自动填示例并解析，?tab=xxx 直达某个标签页。
-   只影响前端填充，不改变任何业务逻辑。 */
-const params = new URLSearchParams(location.search);
-const startTab = params.get("tab");
-if (startTab) switchTab(startTab);
-
-if (params.get("demo") === "1") {
-  if (!startTab || startTab === "parse") {
-    $("#notice-text").value = SAMPLE_NOTICE;
-    updateCharCount();
-    setTimeout(doParse, 300);
-  }
-  if (startTab === "inventory") {
-    $("#lent-text").value = SAMPLE_LENT;
-    $("#returned-text").value = SAMPLE_RETURNED;
-    setTimeout(() => $("#btn-check-inv").click(), 250);
-  }
-}
+boot();

@@ -3,24 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>校园通知雷达 · 深技师</title>
+<title>校园通知雷达</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand">
-    <div class="logo">雷</div>
-    <div class="brand-text">
-      <h1>校园通知雷达</h1>
-      <p>把群消息和通知贴进来，自动挑出截止时间、地点和要交的材料</p>
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="logo">雷</div>
+      <div class="brand-text">
+        <h1>校园通知雷达</h1>
+        <p>粘贴通知，自动挑出截止时间、地点和材料</p>
+      </div>
     </div>
-  </div>
-  <div class="runtime" id="runtime">
-    <div class="rt-item"><span class="rt-num" id="stat-events">–</span><span class="rt-label">今日调用</span></div>
-    <div class="rt-item"><span class="rt-num" id="stat-avg">–</span><span class="rt-label">平均耗时</span></div>
-    <div class="rt-item"><span class="rt-num" id="stat-err">–</span><span class="rt-label">错误数</span></div>
-    <div class="rt-item"><span class="rt-num" id="stat-days">–</span><span class="rt-label">日志天数</span></div>
+    <div class="topbar-right">
+      <a class="btn ghost small" id="admin-link" href="/admin" hidden>管理后台</a>
+      <span class="user-chip">
+        <span class="user-avatar" id="user-avatar">–</span>
+        <span id="user-id">加载中</span>
+        <span class="role-tag" id="role-tag" hidden>管理员</span>
+      </span>
+      <button class="link-btn" id="btn-logout">退出</button>
+    </div>
   </div>
 </header>
 
@@ -35,7 +40,7 @@
   <!-- ============ 解析 ============ -->
   <section class="panel active" id="panel-parse">
     <div class="split">
-      <div class="card input-card">
+      <div class="card">
         <div class="card-head">
           <h2>粘贴通知原文</h2>
           <button class="link-btn" id="btn-sample">填入示例</button>
@@ -52,7 +57,7 @@
         <p class="privacy" id="privacy-note">原文只在本机处理，不上传任何服务器。</p>
       </div>
 
-      <div class="card result-card" id="result-card">
+      <div class="card" id="result-card">
         <div class="empty" id="result-empty">
           <p>解析结果会显示在这里</p>
           <span>截止时间 · 提交地点 · 材料清单 · 联系人 · 待办动作</span>
@@ -66,7 +71,7 @@
   <section class="panel" id="panel-tasks">
     <div class="card">
       <div class="card-head">
-        <h2>待办清单</h2>
+        <h2>我的待办 <span class="hint" id="task-summary"></span></h2>
         <div class="row-right">
           <button class="btn ghost" id="btn-ics">导出日历</button>
           <button class="btn ghost" id="btn-refresh-tasks">刷新</button>
@@ -117,12 +122,13 @@
 
   <!-- ============ 反馈 ============ -->
   <section class="panel" id="panel-feedback">
-    <div class="card narrow">
+    <div class="card" style="max-width:600px">
       <div class="card-head">
         <h2>用一句话换我一次改进</h2>
         <span class="hint" id="fb-count"></span>
       </div>
-      <p class="hint" id="fb-privacy">反馈只存在本机 feedback/responses.jsonl，不留姓名和联系方式。</p>
+      <p class="hint" id="fb-privacy">反馈只存在本机，不留姓名和联系方式。</p>
+
       <label class="field-label">你的身份</label>
       <select id="fb-role">
         <option>班长 / 团支书</option>
@@ -152,17 +158,17 @@
       </div>
 
       <label class="field-label">哪里不好用 / 希望加什么</label>
-      <textarea id="fb-comment" placeholder="例如：群消息里「下周三之前」这种说法识别不出来"></textarea>
+      <textarea id="fb-comment" style="min-height:90px" placeholder="例如：群消息里「下周三之前」这种说法识别不出来"></textarea>
 
       <label class="checkline">
         <input type="checkbox" id="fb-would" checked>
         <span>愿意在接下来的课程里继续用它</span>
       </label>
 
-      <button class="btn primary wide" id="btn-feedback">提交反馈</button>
+      <button class="btn primary block" id="btn-feedback" style="margin-top:16px">提交反馈</button>
       <p class="hint" id="fb-thanks" hidden>已记录，谢谢。</p>
       <div id="fb-echo-wrap" hidden>
-        <p class="hint">已收到。线上环境重建后数据可能清空，建议点一下复制，把这条发给项目组备份。</p>
+        <p class="hint">已收到。线上环境重建后数据可能清空，建议点一下复制留个备份。</p>
         <pre id="fb-echo" class="feedback-echo"></pre>
         <button class="btn ghost small" id="btn-copy-fb">复制这条反馈</button>
       </div>
@@ -171,7 +177,7 @@
 </main>
 
 <footer>
-  <span>校园通知雷达 <strong id="version">v0.1.0</strong> · <span id="foot-mode">纯本地运行</span> · 无第三方依赖</span>
+  <span>校园通知雷达 <strong id="version">v0.6.0</strong> · <span id="foot-mode">纯本地运行</span> · 无第三方依赖</span>
   <span id="foot-stat"></span>
 </footer>
 

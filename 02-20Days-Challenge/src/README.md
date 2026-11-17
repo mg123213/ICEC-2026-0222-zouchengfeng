@@ -6,6 +6,9 @@
 面向深圳技师学院的日常场景开发，不装任何第三方库：既可以本机运行（数据不出机器），
 也可以发布成在线版（把链接发给同学，他们不用装 Python 就能用）。
 
+**多用户**：每人用学号注册一个账号，登录后只看得到自己的待办与反馈；
+管理员（`2024400222`）可以另开一个后台看全局数据。密码存 PBKDF2 哈希，库里没有明文。
+
 > **在线体验**：<https://wbapp-afaouz2pxzdkqew3f4th4r.app.workbuddy.host/?sharecode=YBY6WAHAYJ>
 
 ---
@@ -94,7 +97,9 @@ python app.py
 
 浏览器会自动打开 `http://127.0.0.1:8765/`。
 
-- 需要 Python 3.9+，**不需要 pip install 任何东西**（只用标准库）。
+- 需要 Python 3.9+，**不需要 pip install 任何东西**（只用标准库，含 SQLite）。
+- 首次打开是登录页，先点「注册」建账号（密码至少 6 位、需含字母和数字）。
+  用 `2024400222` 注册即自动成为管理员，登录后右上角会出现「管理后台」。
 - 服务只监听 `127.0.0.1`，手机连不到，通知原文不出本机。
 - `python app.py --port 9000 --no-browser` 可指定端口、不自动开浏览器。
 
@@ -155,15 +160,21 @@ python tools/daily_run.py
 src/
 ├── app.py                    本地服务入口（标准库 http.server）
 ├── core/
+│   ├── store.py              SQLite 存储（用户 / 会话 / 待办 / 反馈）
+│   ├── auth.py               注册登录、密码哈希、会话管理
 │   ├── telemetry.py          脱敏日志 + 统计聚合
 │   ├── timeparse.py          中文时间表达解析
 │   ├── notice_parser.py      通知结构化提取
 │   └── inventory.py          器材借还核对
-├── web/                      界面（原生 HTML/CSS/JS）
+├── web/                      界面（原生 HTML/CSS/JS，白灰蓝）
+│   ├── login.html            登录 / 注册
+│   ├── index.html            工作台（我的待办）
+│   └── admin.html            管理后台（仅管理员）
 ├── tools/
 │   ├── daily_run.py          每日自动任务
 │   ├── gen_report.py         多日汇总报告（提交用）
 │   ├── export_feedback.py    反馈汇总导出
+│   ├── smoke_test.py         端到端冒烟（注册/登录/隔离/越权）
 │   └── install_task.ps1      注册 Windows 计划任务
 ├── tests/
 │   ├── eval_parser.py        解析准确率离线评测
