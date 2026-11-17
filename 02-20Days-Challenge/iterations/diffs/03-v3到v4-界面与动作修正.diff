@@ -1,0 +1,242 @@
+diff -ruN iterations/v3_时间区间与起始语/src/CHANGELOG.md iterations/v4_界面与动作修正/src/CHANGELOG.md
+--- iterations/v3_时间区间与起始语/src/CHANGELOG.md	2026-11-17 12:52:16.455394300 +0800
++++ iterations/v4_界面与动作修正/src/CHANGELOG.md	2026-11-17 12:52:16.508651800 +0800
+@@ -5,6 +5,29 @@
+ 
+ ---
+ 
++## v0.4.0 — 2026-11-17
++
++**界面与细节修正。** 这一版的问题不是评测跑出来的，是**截图人工核对**发现的——
++说明只靠离线指标会漏掉呈现层的问题。
++
++- **空态提示遮挡结果**。`.empty` 用了 `display:grid`，会覆盖 `hidden` 属性默认的
++  `display:none`，导致解析结果出来后「解析结果会显示在这里」仍然叠在卡片上方。
++  加一条 `[hidden] { display: none !important; }` 全局兜底。
++- **动作抽取串到材料里**。`《学生困难补助申请表》` 里的「请」被当成祈使句开头，
++  抽出 `请表》一式两份，需班主任签字`。给动词加前置断言 `(?<![\u4e00-\u9fa5])`，
++  并补上「交至/报送/送至」等动词。
++- **带空格的座机号识别不了**。`0755-8888 0000` 中间有空格，旧正则要求连续数字，
++  结果联系人和电话只出了一半。
++- **日报每天少一条收尾日志**。汇总写在 `daily_run_end` 之前，统计永远看不到它。
++  调整顺序：先写收尾，再汇总。
++- 标签页切换抽成 `switchTab()`，支持 `?tab=tasks` 直达和 `?demo=1` 自动演示，
++  方便录屏与截图。
++- 补三张界面截图到 `docs/screenshots/`。
++
++版本号改为从 `/api/health` 读取，前端不再写死。
++
++---
++
+ ## v0.3.0 — 2026-11-17
+ 
+ **修复 v0.1 的第 2 号缺陷，并处理「无截止通知」的误报。** 触发依据：v0.2.0 评测仍有 3 条
+diff -ruN iterations/v3_时间区间与起始语/src/core/__init__.py iterations/v4_界面与动作修正/src/core/__init__.py
+--- iterations/v3_时间区间与起始语/src/core/__init__.py	2026-11-17 00:47:53.000000000 +0800
++++ iterations/v4_界面与动作修正/src/core/__init__.py	2026-11-17 00:50:01.000000000 +0800
+@@ -9,4 +9,4 @@
+     inventory      实训器材借还核对
+ """
+ 
+-__version__ = "0.3.0"
++__version__ = "0.4.0"
+diff -ruN iterations/v3_时间区间与起始语/src/core/notice_parser.py iterations/v4_界面与动作修正/src/core/notice_parser.py
+--- iterations/v3_时间区间与起始语/src/core/notice_parser.py	2026-11-17 00:47:53.000000000 +0800
++++ iterations/v4_界面与动作修正/src/core/notice_parser.py	2026-11-17 00:50:01.000000000 +0800
+@@ -95,7 +95,7 @@
+     r"(?:联系人|联系老师|咨询电话|联系电话|联系)\s*[:：]?\s*"
+     r"([\u4e00-\u9fa5]{2,4}?)(?:老师|同学|主任|科长|辅导员)?(?=[，,。；;\s（(]|$)"
+ )
+-_PHONE_RE = re.compile(r"(?<!\d)(1[3-9]\d{9}|\d{3,4}-\d{7,8}|0\d{2,3}-\d{7,8})(?!\d)")
++_PHONE_RE = re.compile(r"(?<!\d)(1[3-9]\d{9}|\d{3,4}[-\s]\d{4}[\s-]?\d{4})(?!\d)")
+ 
+ # 这些不是人名，是部门
+ _CONTACT_BLACKLIST = {
+@@ -105,10 +105,16 @@
+ 
+ # 待办动作：祈使句里常见的动词
+ _ACTION_VERBS = (
+-    "报名", "提交", "上交", "填写", "填报", "参加", "领取", "确认", "缴纳", "缴费",
+-    "打印", "签字", "登录", "扫码", "加入", "携带", "准备", "核对", "归还", "签到",
++    "报名", "提交", "上交", "交至", "交到", "报送", "送至", "填写", "填报", "参加",
++    "领取", "确认", "缴纳", "缴费", "打印", "签字", "登录", "扫码", "加入",
++    "携带", "准备", "核对", "归还", "签到",
++)
++# 前置 (?<![\u4e00-\u9fa5]) 很关键：否则「申请」里的「请」会被当成祈使句开头，
++# 抽出一句「请表》一式两份，需班主任签字」这种脏结果
++_ACTION_RE = re.compile(
++    r"(?<![\u4e00-\u9fa5])(?:请|需|须|务必|应|及时)"
++    r"[^。；\n]{0,40}?(?:" + "|".join(_ACTION_VERBS) + r")[^。；\n]{0,20}"
+ )
+-_ACTION_RE = re.compile(r"(?:请|需|须|务必|应|及时)[^。；\n]{0,40}(?:" + "|".join(_ACTION_VERBS) + r")[^。；\n]{0,30}")
+ 
+ _SENT_SPLIT = re.compile(r"[。！？；\n]+")
+ _CLAUSE_SPLIT = re.compile(r"[，,]")
+diff -ruN iterations/v3_时间区间与起始语/src/data/tasks.json iterations/v4_界面与动作修正/src/data/tasks.json
+--- iterations/v3_时间区间与起始语/src/data/tasks.json	2026-11-17 00:47:53.000000000 +0800
++++ iterations/v4_界面与动作修正/src/data/tasks.json	2026-11-17 00:50:01.000000000 +0800
+@@ -1 +1,61 @@
+-[]
++[
++  {
++    "id": "t20261117-001",
++    "title": "关于开展2026-2027学年第一学期学生困难补助申请的通知",
++    "deadline": "2026-11-21 17:00",
++    "deadline_conf": 0.94,
++    "urgency": "normal",
++    "location": "行政楼302室",
++    "materials": [
++      {
++        "name": "学生困难补助申请表",
++        "qty": 2,
++        "unit": "份"
++      },
++      {
++        "name": "身份证复印件",
++        "qty": 1,
++        "unit": "份"
++      },
++      {
++        "name": "上一学年成绩单",
++        "qty": 1,
++        "unit": "份"
++      },
++      {
++        "name": "家庭经济困难佐证材料复印件",
++        "qty": 1,
++        "unit": "份"
++      }
++    ],
++    "tags": [
++      "教务",
++      "资助"
++    ],
++    "done": false,
++    "created_at": "2026-11-17T00:49",
++    "note_file": "data\\notes\\t20261117-001.txt"
++  },
++  {
++    "id": "t20261117-002",
++    "title": "关于承办第49届世界技能大赛深圳市选拔赛报名工作的通知",
++    "deadline": "2026-11-25 18:00",
++    "deadline_conf": 0.99,
++    "urgency": "normal",
++    "location": "",
++    "materials": [
++      {
++        "name": "照片",
++        "qty": 1,
++        "unit": "寸"
++      }
++    ],
++    "tags": [
++      "竞赛",
++      "教务"
++    ],
++    "done": false,
++    "created_at": "2026-11-17T00:49",
++    "note_file": "data\\notes\\t20261117-002.txt"
++  }
++]
+\ No newline at end of file
+Binary files iterations/v3_时间区间与起始语/src/docs/screenshots/01-parse.png and iterations/v4_界面与动作修正/src/docs/screenshots/01-parse.png differ
+Binary files iterations/v3_时间区间与起始语/src/docs/screenshots/02-tasks.png and iterations/v4_界面与动作修正/src/docs/screenshots/02-tasks.png differ
+Binary files iterations/v3_时间区间与起始语/src/docs/screenshots/03-inventory.png and iterations/v4_界面与动作修正/src/docs/screenshots/03-inventory.png differ
+diff -ruN iterations/v3_时间区间与起始语/src/tools/daily_run.py iterations/v4_界面与动作修正/src/tools/daily_run.py
+--- iterations/v3_时间区间与起始语/src/tools/daily_run.py	2026-11-17 00:47:53.000000000 +0800
++++ iterations/v4_界面与动作修正/src/tools/daily_run.py	2026-11-17 00:50:01.000000000 +0800
+@@ -274,7 +274,7 @@
+         added = scan_inbox()
+         check = self_check()
+ 
+-    summary = rollup(added)
++    # 先写收尾日志再汇总：v0.1 把顺序反了，导致日报里永远少一条 daily_run_end
+     _tel.event(
+         "daily_run_end",
+         dur_ms=(time.perf_counter() - t0) * 1000,
+@@ -283,6 +283,7 @@
+         items=len(added),
+         source="auto",
+     )
++    summary = rollup(added)
+ 
+     if not args.quiet:
+         print(f"[{datetime.now(CST):%Y-%m-%d %H:%M}] 新增待办 {len(added)} 条，"
+diff -ruN iterations/v3_时间区间与起始语/src/web/app.js iterations/v4_界面与动作修正/src/web/app.js
+--- iterations/v3_时间区间与起始语/src/web/app.js	2026-11-17 00:47:53.000000000 +0800
++++ iterations/v4_界面与动作修正/src/web/app.js	2026-11-17 00:50:01.000000000 +0800
+@@ -22,15 +22,15 @@
+ }
+ 
+ /* ------------------------------------------------------------ 标签页 */
++function switchTab(name) {
++  $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.panel === name));
++  $$(".panel").forEach((p) => p.classList.toggle("active", p.id === `panel-${name}`));
++  if (name === "tasks") loadTasks();
++  if (name === "feedback") loadFeedbackCount();
++}
++
+ $$(".tab").forEach((tab) => {
+-  tab.addEventListener("click", () => {
+-    $$(".tab").forEach((t) => t.classList.remove("active"));
+-    $$(".panel").forEach((p) => p.classList.remove("active"));
+-    tab.classList.add("active");
+-    $(`#panel-${tab.dataset.panel}`).classList.add("active");
+-    if (tab.dataset.panel === "tasks") loadTasks();
+-    if (tab.dataset.panel === "feedback") loadFeedbackCount();
+-  });
++  tab.addEventListener("click", () => switchTab(tab.dataset.panel));
+ });
+ 
+ /* ------------------------------------------------------------ 样例 */
+@@ -482,8 +482,36 @@
+   }
+ }
+ 
+-$("#version").textContent = "v0.1.0";
++async function loadVersion() {
++  try {
++    const data = await api("/api/health");
++    $("#version").textContent = "v" + data.version;
++  } catch {
++    /* 版本号取不到就保留页面里的占位 */
++  }
++}
++
+ updateCharCount();
++loadVersion();
+ loadStats();
+ loadTasks();
+ setInterval(loadStats, 30000);
++
++/* 演示模式：?demo=1 自动填示例并解析，?tab=xxx 直达某个标签页。
++   只影响前端填充，不改变任何业务逻辑。 */
++const params = new URLSearchParams(location.search);
++const startTab = params.get("tab");
++if (startTab) switchTab(startTab);
++
++if (params.get("demo") === "1") {
++  if (!startTab || startTab === "parse") {
++    $("#notice-text").value = SAMPLE_NOTICE;
++    updateCharCount();
++    setTimeout(doParse, 300);
++  }
++  if (startTab === "inventory") {
++    $("#lent-text").value = SAMPLE_LENT;
++    $("#returned-text").value = SAMPLE_RETURNED;
++    setTimeout(() => $("#btn-check-inv").click(), 250);
++  }
++}
+diff -ruN iterations/v3_时间区间与起始语/src/web/style.css iterations/v4_界面与动作修正/src/web/style.css
+--- iterations/v3_时间区间与起始语/src/web/style.css	2026-11-17 00:47:53.000000000 +0800
++++ iterations/v4_界面与动作修正/src/web/style.css	2026-11-17 00:50:01.000000000 +0800
+@@ -20,6 +20,9 @@
+ 
+ * { box-sizing: border-box; }
+ 
++/* .empty 用了 display:grid，会覆盖 hidden 属性的默认 display:none，必须显式压回去 */
++[hidden] { display: none !important; }
++
+ body {
+   margin: 0;
+   background: var(--bg);

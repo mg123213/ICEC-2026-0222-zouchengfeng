@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 · 校园通知雷达</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="logo">雷</div>
+      <div class="brand-text">
+        <h1>管理后台</h1>
+        <p>只看数据，不改学生内容</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <a class="btn ghost small" id="back-link" href="/">返回工作台</a>
+      <span class="user-chip">
+        <span class="user-avatar" id="user-avatar">–</span>
+        <span id="user-id">—</span>
+        <span class="role-tag">管理员</span>
+      </span>
+      <button class="link-btn" id="btn-logout">退出</button>
+    </div>
+  </div>
+</header>
+
+<div class="admin-head">
+  <div class="stat-grid" id="stat-grid"></div>
+</div>
+
+<nav class="admin-tabs">
+  <button class="tab active" data-view="overview">概览</button>
+  <button class="tab" data-view="users">注册用户</button>
+  <button class="tab" data-view="tasks">全部待办</button>
+  <button class="tab" data-view="feedback">使用反馈</button>
+</nav>
+
+<div class="admin-body">
+  <section class="admin-panel active" id="view-overview">
+    <div class="card">
+      <div class="card-head"><h2>近 7 天程序运行</h2><span class="hint" id="tel-summary"></span></div>
+      <div id="tel-bars"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-head"><h2>事件类型分布</h2></div>
+      <div class="table-wrap"><table id="tel-events"></table></div>
+    </div>
+  </section>
+
+  <section class="admin-panel" id="view-users">
+    <div class="card">
+      <div class="card-head"><h2>注册用户</h2><span class="hint" id="users-count"></span></div>
+      <div class="table-wrap"><table id="users-table"></table></div>
+    </div>
+  </section>
+
+  <section class="admin-panel" id="view-tasks">
+    <div class="card">
+      <div class="card-head"><h2>全部待办</h2><span class="hint" id="tasks-count"></span></div>
+      <div class="table-wrap"><table id="tasks-table"></table></div>
+    </div>
+  </section>
+
+  <section class="admin-panel" id="view-feedback">
+    <div class="card">
+      <div class="card-head"><h2>使用反馈</h2><span class="hint" id="feedback-count"></span></div>
+      <div class="table-wrap"><table id="feedback-table"></table></div>
+    </div>
+  </section>
+</div>
+
+<script src="/static/admin.js"></script>
+</body>
+</html>

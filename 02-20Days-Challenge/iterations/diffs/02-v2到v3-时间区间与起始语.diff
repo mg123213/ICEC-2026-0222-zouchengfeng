@@ -1,0 +1,275 @@
+diff -ruN iterations/v2_重写地点与材料/src/CHANGELOG.md iterations/v3_时间区间与起始语/src/CHANGELOG.md
+--- iterations/v2_重写地点与材料/src/CHANGELOG.md	2026-11-17 12:52:16.408400200 +0800
++++ iterations/v3_时间区间与起始语/src/CHANGELOG.md	2026-11-17 12:52:16.455394300 +0800
+@@ -5,6 +5,43 @@
+ 
+ ---
+ 
++## v0.3.0 — 2026-11-17
++
++**修复 v0.1 的第 2 号缺陷，并处理「无截止通知」的误报。** 触发依据：v0.2.0 评测仍有 3 条
++挂在时间解析上（选课取成开始时间、图书馆延时被当成截止、补考通知被强行识别出截止）。
++
++改动：
++
++- **区间识别**。`11月18日9:00至11月22日24:00` 这类表达，以前取到了开始时间，
++  是最危险的一类错误——用户照着 11-18 准备，实际截止是 11-22。现在扫描相邻候选之间的
++  连接符（至/到/—/~/～），把前者标记为区间起点、后者标记为终点，终点加 0.15 分、起点减 0.50 分。
++- **支持 `24:00`**，按当日 23:59 处理，贴合「今晚 12 点截止」的日常理解。
++- **负向语义识别**。三类位置上的时间不算截止：起始语（`自……起`）、活动安排语
++  （`定于……举行/进行`）、区间起点。命中负向信号的候选，若附近 15 字内没有
++  「截止/不晚于/请于」这类强锚点，直接剔除；全部候选都被剔除时返回 `None`，
++  界面提示「未识别到截止时间」。
++- **修了一个隐蔽的定位错误**：判断上下文时用的是「绑定时刻之后」的位置，
++  导致 `11月20日起` 里的「起」被跳过、08 号用例一直修不掉。改为用日期本身
++  的结束位置（新增 `date_end` 字段）。
++- **地点加提交语境门槛**。整篇没有交至/报送/集合/领取这类动作时，不再输出「提交地点」——
++  「图书馆延长开放时间」里的图书馆不是要交材料的地方。
++
++**评测对比**
++
++| 指标 | v0.1.0 | v0.2.0 | v0.3.0 |
++| --- | --- | --- | --- |
++| 截止时间完全命中 | 62.5% | 62.5% | **100%** |
++| 地点命中 | 50.0% | 87.5% | **100%** |
++| 材料全部召回 | 62.5% | 100% | 100% |
++| 三项全过 | 12.5% | 62.5% | **100%** |
++
++单元测试 20 条全绿（`python tests/test_core.py`）。
++
++> 需要说明的是：8 条语料是自建的，100% 只证明在这批写法上稳定，不代表泛化能力。
++> 后续每次遇到新写法都应该先补进 `data/samples/` 再改代码，否则评测数字会虚高。
++
++---
++
+ ## v0.2.0 — 2026-11-17
+ 
+ **修复 v0.1 的第 1、3、4、5 号缺陷。** 触发依据是 v0.1 基线评测：地点命中只有 50%，
+diff -ruN iterations/v2_重写地点与材料/src/core/__init__.py iterations/v3_时间区间与起始语/src/core/__init__.py
+--- iterations/v2_重写地点与材料/src/core/__init__.py	2026-11-17 00:46:29.000000000 +0800
++++ iterations/v3_时间区间与起始语/src/core/__init__.py	2026-11-17 00:47:53.000000000 +0800
+@@ -9,4 +9,4 @@
+     inventory      实训器材借还核对
+ """
+ 
+-__version__ = "0.1.0"
++__version__ = "0.3.0"
+diff -ruN iterations/v2_重写地点与材料/src/core/notice_parser.py iterations/v3_时间区间与起始语/src/core/notice_parser.py
+--- iterations/v2_重写地点与材料/src/core/notice_parser.py	2026-11-17 00:46:29.000000000 +0800
++++ iterations/v3_时间区间与起始语/src/core/notice_parser.py	2026-11-17 00:47:53.000000000 +0800
+@@ -77,10 +77,17 @@
+ 
+ # 地点提示语：有这些词的句子优先
+ _LOCATION_HINT = re.compile(
+-    r"地点|地址|交至|提交至|报送至|送至|前往|集合|"
++    r"地点|地址|交至|提交至|报送至|送至|递交|前往|集合|"
+     r"[到在]\s*[\u4e00-\u9fa5A-Za-z0-9]{0,8}(?:楼|室|馆|厅|中心|校区)"
+ )
+ 
++# 提交语境：整篇没有这类动作时，说明它不是在叫人去哪儿交东西，
++# 此时不应输出「提交地点」（例如「图书馆延长开放时间」里的图书馆）
++_SUBMIT_ACTION = re.compile(
++    r"交至|提交|上交|报送|送至|递交|前往|集合|领取|办理|"
++    r"[到在]\s*[\u4e00-\u9fa5A-Za-z0-9]{0,8}(?:楼|室|馆|厅)"
++)
++
+ # 太泛的地点名，有更好的候选时应跳过
+ _GENERIC_LOCATIONS = {"办公室", "教室", "会议室", "实训室", "机房", "报告厅", "中心", "门口"}
+ 
+@@ -249,6 +256,9 @@
+ 
+ def _extract_location(text: str) -> Optional[str]:
+     """抽取提交/集合地点。优先取带「交至/在……集合」提示语的那一句。"""
++    if not _SUBMIT_ACTION.search(text):
++        return None
++
+     hinted: List[str] = []
+     plain: List[str] = []
+ 
+diff -ruN iterations/v2_重写地点与材料/src/core/timeparse.py iterations/v3_时间区间与起始语/src/core/timeparse.py
+--- iterations/v2_重写地点与材料/src/core/timeparse.py	2026-11-17 00:46:29.000000000 +0800
++++ iterations/v3_时间区间与起始语/src/core/timeparse.py	2026-11-17 00:47:53.000000000 +0800
+@@ -126,6 +126,9 @@
+     confidence: float
+     kind: str
+     has_clock: bool
++    date_end: int = 0              # 日期部分本身的结束位置（不含绑定的时刻）
++    is_range_start: bool = False   # 「11月18日至11月22日」中的前者
++    is_range_end: bool = False     # 区间终点，更像截止时间
+ 
+     def to_dict(self) -> dict:
+         return {
+@@ -134,6 +137,7 @@
+             "kind": self.kind,
+             "confidence": round(self.confidence, 2),
+             "has_clock": self.has_clock,
++            "range_start": self.is_range_start,
+         }
+ 
+ 
+@@ -173,6 +177,9 @@
+ 
+ def _resolve_clock(ampm: Optional[str], hour: int, minute: int) -> Optional[tuple]:
+     """把「下午5点」「晚上8点」修正为 24 小时制。返回 (h, m) 或 None。"""
++    # 「24:00」是通知里常见的当日结束写法，按 23:59 处理更符合用户直觉
++    if hour == 24 and minute == 0:
++        return 23, 59
+     if hour > 23 or minute > 59:
+         return None
+     if ampm in ("下午", "傍晚", "晚间"):
+@@ -304,12 +311,42 @@
+             results.append(TimeCandidate(
+                 dt=base, start=match.start(), end=span_end,
+                 raw=raw, confidence=min(conf, 0.99), kind=kind, has_clock=has_clock,
++                date_end=match.end(),
+             ))
+ 
+     results.sort(key=lambda c: c.start)
++    _link_ranges(norm, results)
+     return results
+ 
+ 
++# 「11月18日9:00至11月22日24:00」这类区间的连接符
++_RANGE_CONNECTOR = re.compile(r"^\s*(?:至|到|持续到|截止到|—|－|-|~|～|–)+\s*$")
++
++
++def _link_ranges(text: str, candidates: List[TimeCandidate]) -> None:
++    """把 「A 至 B」 标记为区间，避免把开始时间当成截止时间。
++
++    v0.1.0 在「选课时间为11月18日9:00至11月22日24:00」上取到了 11-18 09:00，
++    这是最容易被用户直接照做、从而错过截止的一类错误，必须专门处理。
++    """
++    for prev, nxt in zip(candidates, candidates[1:]):
++        if prev.end > nxt.start:
++            continue
++        if _RANGE_CONNECTOR.match(text[prev.end:nxt.start]):
++            prev.is_range_start = True
++            nxt.is_range_end = True
++
++
++# 起始语：「自 11 月 20 日起」是事件的开始，不是截止
++_START_BEFORE = re.compile(r"(?:自|从)\s*$")
++_START_AFTER = re.compile(r"^\s*(?:起|开始|起算)")
++_END_AFTER = re.compile(r"^\s*(?:止|截止)")
++
++# 事件安排语：「补考定于11月28日进行」是考试时间，不是要交东西的截止
++_EVENT_BEFORE = re.compile(r"(?:定于|将于|安排在|计划于|拟于)\s*$")
++_EVENT_AFTER = re.compile(r"^\s*(?:举行|进行|开始|开幕|开展|举办|召开|当天)")
++
++
+ def _anchor_spans(text: str):
+     """返回强锚点与弱锚点出现的位置集合。"""
+     strong = [m.start() for m in _STRONG_ANCHORS.finditer(text)]
+@@ -317,7 +354,7 @@
+     return strong, weak
+ 
+ 
+-def _score(cand: TimeCandidate, strong, weak, now: datetime) -> float:
++def _score(cand: TimeCandidate, text: str, strong, weak, now: datetime) -> float:
+     score = cand.confidence
+ 
+     if strong:
+@@ -331,6 +368,23 @@
+         if dist <= 10:
+             score += 0.10
+ 
++    # 区间的结束端更像截止时间，开始端几乎不是
++    if cand.is_range_end:
++        score += 0.15
++    elif cand.is_range_start:
++        score -= 0.50
++
++    # 上下文语义：「自……起」是起始，「……止」是结束，「定于……举行」是活动时间
++    before = text[max(0, cand.start - 8):cand.start]
++    anchor = cand.date_end or cand.end
++    after = text[anchor:anchor + 8]
++    if _START_BEFORE.search(before) or _START_AFTER.search(after):
++        score -= 0.45
++    if _END_AFTER.search(after):
++        score += 0.20
++    if _EVENT_BEFORE.search(before) or _EVENT_AFTER.search(after):
++        score -= 0.50
++
+     # 时间必须落在未来（或就在今天）；已经过去的多半是发布日期
+     delta_hours = (cand.dt - now).total_seconds() / 3600
+     if delta_hours >= 0:
+@@ -342,6 +396,25 @@
+     return score
+ 
+ 
++def _negative_flags(cand: TimeCandidate, text: str) -> List[str]:
++    """判断一个候选是否带「这不是截止时间」的语义信号。
++
++    三类：起始语（自……起）、活动安排语（定于……举行）、区间起点（A 至 B 的 A）。
++    这些位置上的时间几乎都不是学生需要卡的那个截止时刻。
++    """
++    before = text[max(0, cand.start - 8):cand.start]
++    anchor = cand.date_end or cand.end
++    after = text[anchor:anchor + 8]
++    flags: List[str] = []
++    if _START_BEFORE.search(before) or _START_AFTER.search(after):
++        flags.append("start_phrase")
++    if _EVENT_BEFORE.search(before) or _EVENT_AFTER.search(after):
++        flags.append("event_phrase")
++    if cand.is_range_start:
++        flags.append("range_start")
++    return flags
++
++
+ def extract_deadline(
+     text: str,
+     now: Optional[datetime] = None,
+@@ -357,7 +430,22 @@
+         return None
+ 
+     strong, weak = _anchor_spans(norm)
+-    scored = [(c, _score(c, strong, weak, now)) for c in candidates]
++
++    def _near_strong(cand: TimeCandidate) -> bool:
++        """附近 15 字内有没有「截止/不晚于/请于」这类强锚点。
++
++        有锚点时才允许推翻负向信号 —— 例如「报名截止定于11月20日」，
++        虽然带「定于」，但明确写了截止，应以它为准。
++        """
++        return any(abs(cand.start - pos) <= 15 for pos in strong)
++
++    usable = [c for c in candidates if not _negative_flags(c, norm) or _near_strong(c)]
++    if not usable:
++        # 全文的时间都是活动安排或起始时间，说明这条通知没写提交截止，
++        # 宁可返回 None 让用户自己看一眼，也不给一个会被照做的错误日期
++        return None
++
++    scored = [(c, _score(c, norm, strong, weak, now)) for c in usable]
+     best, best_score = max(scored, key=lambda item: item[1])
+ 
+     if best_score < min_score:
+diff -ruN iterations/v2_重写地点与材料/src/docs/eval_2026-11-17_0047.md iterations/v3_时间区间与起始语/src/docs/eval_2026-11-17_0047.md
+--- iterations/v2_重写地点与材料/src/docs/eval_2026-11-17_0047.md	1970-01-01 08:00:00.000000000 +0800
++++ iterations/v3_时间区间与起始语/src/docs/eval_2026-11-17_0047.md	2026-11-17 12:52:16.475799300 +0800
+@@ -0,0 +1,26 @@
++# 解析准确率评测 · 2026-11-17_0047
++
++> 语料：data/samples/ 下 8 条通知（模拟真实写法，覆盖公文、群消息、长文三种形态）
++
++## 汇总
++
++| 指标 | 数值 |
++| --- | --- |
++| 截止时间完全命中 | 100.0% |
++| 截止时间日期命中 | 100.0% |
++| 地点命中 | 100.0% |
++| 材料全部召回 | 100.0% |
++| 三项全过 | 100.0% |
++
++## 逐条结果
++
++| 用例 | 截止(期望) | 截止(实际) | 地点(期望/实际) | 材料召回 |
++| --- | --- | --- | --- | --- |
++| 01_困难补助 | 2026-11-21 17:00 | 2026-11-21 17:00 OK | 行政楼302室 / 行政楼302室 | 4/4 |
++| 02_群消息口语 | 2026-11-20 12:00 | 2026-11-20 12:00 OK | 实训楼B305 / 实训楼B305 | 1/1 |
++| 03_世赛选拔 | 2026-11-25 18:00 | 2026-11-25 18:00 OK | 空 / 空 | 1/1 |
++| 04_线上选课 | 2026-11-22 23:59 | 2026-11-22 23:59 OK | 空 / 空 | - |
++| 05_补考安排 | 无(应为空) | 未识别 OK | 空 / 空 | 2/2 |
++| 06_器材借用 | 2026-11-18 23:59 | 2026-11-18 23:59 OK | 实训楼A102 / 实训楼A102 | - |
++| 07_文体艺术节 | 2026-11-20 20:00 | 2026-11-20 20:00 OK | 团委办公室 / 团委办公室 | - |
++| 08_图书馆延时 | 无(应为空) | 未识别 OK | 空 / 空 | - |

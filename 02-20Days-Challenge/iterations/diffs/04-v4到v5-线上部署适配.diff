@@ -1,0 +1,802 @@
+diff -ruN iterations/v4_界面与动作修正/src/.wbapp_AfAOuz2pxzDKQeW3f4tH4r.genie iterations/v5_线上部署适配/src/.wbapp_AfAOuz2pxzDKQeW3f4tH4r.genie
+--- iterations/v4_界面与动作修正/src/.wbapp_AfAOuz2pxzDKQeW3f4tH4r.genie	1970-01-01 08:00:00.000000000 +0800
++++ iterations/v5_线上部署适配/src/.wbapp_AfAOuz2pxzDKQeW3f4tH4r.genie	2026-11-17 01:03:39.000000000 +0800
+@@ -0,0 +1,4 @@
++appId: wbapp_AfAOuz2pxzDKQeW3f4tH4r
++name: 校园通知雷达
++localDir: D:\实验班\项目四
++appType: web
+diff -ruN iterations/v4_界面与动作修正/src/.workbuddy/applications.yaml iterations/v5_线上部署适配/src/.workbuddy/applications.yaml
+--- iterations/v4_界面与动作修正/src/.workbuddy/applications.yaml	1970-01-01 08:00:00.000000000 +0800
++++ iterations/v5_线上部署适配/src/.workbuddy/applications.yaml	2026-11-17 01:03:39.000000000 +0800
+@@ -0,0 +1,3 @@
++applications:
++  - name: 校园通知雷达
++    locator: wbapp_AfAOuz2pxzDKQeW3f4tH4r
+diff -ruN iterations/v4_界面与动作修正/src/.workbuddy/memory/2026-11-17.md iterations/v5_线上部署适配/src/.workbuddy/memory/2026-11-17.md
+--- iterations/v4_界面与动作修正/src/.workbuddy/memory/2026-11-17.md	1970-01-01 08:00:00.000000000 +0800
++++ iterations/v5_线上部署适配/src/.workbuddy/memory/2026-11-17.md	2026-11-17 12:52:09.793759000 +0800
+@@ -0,0 +1,41 @@
++# 2026-11-17 · 项目四（校园轻量工具）
++
++## 交付目标
++作业要求三项：连续 ≥7 天自动化运行日志（25）、基于日志的 ≥3 次 Git 迭代（20）、
++完整源码 + 8 位真实用户反馈（15）。学校为**深圳技师学院**（ssti.net.cn），
++通知渠道为官网公告栏 + 微信公众号 + 班级群，实训器材借用频繁。
++
++## 本周决定
++- 程序定为「校园通知雷达」，两个模块：通知要素提取、实训器材借还核对。
++- 技术栈：**Python 3.11 标准库 + 原生前端**，零第三方依赖，`http.server` 起本地服务，
++  只监听 127.0.0.1，通知原文不出本机。目的是让同学电脑上"双击就能跑"。
++- 项目根目录 `D:/实验班/项目四`，git 分支 main，Python 用系统 3.11
++  （`C:\Users\29099\AppData\Local\Programs\Python\Python311\python.exe`）。
++
++## 用户明确拒绝过的事
++**用户要求"生成七天的日志就行"（即伪造时间戳）——已拒绝并说明理由。**
++不能做：git 提交时间、文件 mtime、服务端记录三处对不上，且该评分点本身叫"防摆拍"。
++正确路径是挂自动任务真跑 7 天，已建 automation（每天 19:10）+
++提供 `tools/install_task.ps1`（Windows 计划任务，每天 08:10/19:30，开机补跑）。
++
++## 已完成
++- 5 次提交（v0.1.0 基线 → v0.2 地点/材料 → v0.3 时间解析 → v0.4 界面 → docs）
++- 解析准确率：截止 62.5%→100%、地点 50%→100%、材料 62.5%→100%（8 条自建语料，
++  不代表泛化，见 CHANGELOG 里的说明）
++- 单测 20 条全绿；`data/samples/` 8 条测试语料
++- 日志脱敏靠**白名单**（`_ALLOWED_META_KEYS`）机制性保证，不靠自觉
++- 三张界面截图在 `docs/screenshots/`
++
++## 还欠的两件事（需用户自己动手）
++1. **7 天日志**：11-17 是第 1 天，要跑到 11-23。装计划任务即可，无需人工干预。
++2. **8 位用户反馈**：`feedback/responses.jsonl` 现在是 0 条，
++   收集流程见 `docs/用户反馈收集说明.md`。禁止一人填 8 条。
++
++## 技术坑（后续迭代注意）
++- git 作者目前是占位 `Radar Dev <radar@localhost>`，推 GitHub 前必须改，
++  否则贡献记录不算本人的（命令见 `docs/提交说明.md`）。
++- `data/notes/`（通知原文）已 gitignore，不要提交。
++- 改了解析逻辑必须重跑 `tests/eval_parser.py` 并记录数字，否则迭代无依据。
++- 不要为了提准确率去改 `tests/golden.json`，那是调答案。
++- 无头截图命令：Edge `--headless=new --virtual-time-budget=6000`，
++  临时目录用 `.edge-tmp/`（已 gitignore）。
+diff -ruN iterations/v4_界面与动作修正/src/CHANGELOG.md iterations/v5_线上部署适配/src/CHANGELOG.md
+--- iterations/v4_界面与动作修正/src/CHANGELOG.md	2026-11-17 12:52:16.508651800 +0800
++++ iterations/v5_线上部署适配/src/CHANGELOG.md	2026-11-17 12:52:16.558685000 +0800
+@@ -5,6 +5,32 @@
+ 
+ ---
+ 
++## v0.5.0 — 2026-11-17
++
++**支持发布为在线应用。** 目的不是替代本地运行，而是解决一个现实问题：
++8 位反馈用户没法用你电脑上的程序，而且本地服务一关机就没了。
++
++改动：
++
++- **监听地址按环境变量切换**。检测到 `PORT` 就绑 `0.0.0.0`（云端沙箱由平台注入），
++  否则仍只绑 `127.0.0.1`（本机隐私优先）。云端端口不能自动让位，本机仍会避开占用。
++- **修一个只有上线才会暴露的问题**。平台网关要求每个请求都带 `sharecode`，
++  而浏览器发起的 `<link>` / `<script>` 不会自动带主页面的查询参数，结果样式表和脚本
++  全部 403，页面变成没有样式的裸 HTML。而且网关转发前会把 `sharecode` 从 query 里剥掉，
++  服务端也读不到它 —— 所以第一次发布出去其实是不可用的。
++  改法：云端模式把 CSS/JS **内联进 HTML**，整页只有一次请求；后续 fetch 由前端
++  从 `location.search` 取 `sharecode` 自行拼上。
++- **反馈可带走**。沙箱容器重建会清空文件，线上提交反馈后会额外返回一段可复制的
++  JSON 记录，提交者发回来即可补录到本机 `feedback/responses.jsonl`。
++- 页脚按环境显示「纯本地运行」或「线上演示版」。
++
++**线上地址**：<https://wbapp-afaouz2pxzdkqew3f4th4r.app.workbuddy.host/?sharecode=YBY6WAHAYJ>
++
++> 线上版和本地版是同一份代码，行为差异只有存储位置与监听地址。
++> 作业要求的连续运行日志仍然只由本机产生 —— 云端容器里的日志不会回流到仓库。
++
++---
++
+ ## v0.4.0 — 2026-11-17
+ 
+ **界面与细节修正。** 这一版的问题不是评测跑出来的，是**截图人工核对**发现的——
+diff -ruN iterations/v4_界面与动作修正/src/app.py iterations/v5_线上部署适配/src/app.py
+--- iterations/v4_界面与动作修正/src/app.py	2026-11-17 00:50:01.000000000 +0800
++++ iterations/v5_线上部署适配/src/app.py	2026-11-17 01:03:39.000000000 +0800
+@@ -6,8 +6,13 @@
+     python app.py --port 9000    # 指定端口
+     python app.py --no-browser   # 不自动打开浏览器
+ 
+-只用 Python 标准库，不需要 pip install 任何东西。服务只监听 127.0.0.1，
+-通知原文、器材表格、反馈内容全部留在本机，不出网。
++只用 Python 标准库，不需要 pip install 任何东西。
++
++监听地址分两种模式：
++* **本机模式**（默认）：只绑 127.0.0.1，同网段的其他机器访问不到，
++  通知原文、器材表格、反馈内容全部留在本机。
++* **云端模式**：环境变量里有 `PORT` 时（发布到沙箱后由平台注入），
++  绑 0.0.0.0 并把该端口作为服务端口，否则反向代理连不进来。
+ """
+ 
+ from __future__ import annotations
+@@ -15,6 +20,8 @@
+ import argparse
+ import json
+ import mimetypes
++import os
++import re
+ import socket
+ import sys
+ import threading
+@@ -25,7 +32,7 @@
+ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+ from pathlib import Path
+ from typing import Any, Dict, Optional
+-from urllib.parse import unquote, urlparse
++from urllib.parse import parse_qs, unquote, urlparse
+ 
+ BASE_DIR = Path(__file__).resolve().parent
+ sys.path.insert(0, str(BASE_DIR))
+@@ -42,6 +49,9 @@
+ 
+ MAX_BODY = 512 * 1024      # 单次请求体上限，防止误粘贴超大文件把内存打满
+ 
++# 平台发布后会注入 PORT；此时网关要求每个请求带 sharecode，静态资源也不例外
++IN_CLOUD = (os.environ.get("PORT") or "").strip().isdigit()
++
+ _io_lock = threading.Lock()
+ _tel = Telemetry()
+ 
+@@ -228,12 +238,31 @@
+         "comment": str(payload.get("comment") or "")[:300],
+         "would_use": bool(payload.get("would_use")),
+     }
+-    _ensure_dirs()
+-    with _io_lock:
+-        with open(FEEDBACK_FILE, "a", encoding="utf-8") as fh:
+-            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+-    _tel.event("submit_feedback", ok=True, score=score, role=record["role"], source="web")
+-    return {"ok": True, "saved": record["ts"], "count": count_feedback()}
++    serialized = json.dumps(record, ensure_ascii=False)
++
++    # 云端沙箱的磁盘不保证持久，写失败也要把内容原样回给前端，
++    # 让提交者能复制带走、事后补录到本机 responses.jsonl
++    persisted = True
++    try:
++        _ensure_dirs()
++        with _io_lock:
++            with open(FEEDBACK_FILE, "a", encoding="utf-8") as fh:
++                fh.write(serialized + "\n")
++    except OSError:
++        persisted = False
++
++    _tel.event(
++        "submit_feedback", ok=True, score=score, role=record["role"],
++        source="cloud" if (os.environ.get("PORT") or "").isdigit() else "web",
++        degraded=False if persisted else True,
++    )
++    return {
++        "ok": True,
++        "persisted": persisted,
++        "saved": record["ts"],
++        "count": count_feedback() if persisted else 0,
++        "line": serialized,
++    }
+ 
+ 
+ def count_feedback() -> int:
+@@ -286,12 +315,55 @@
+             ctype += "; charset=utf-8"
+         self._send(200, path.read_bytes(), ctype)
+ 
++    def _serve_index(self) -> None:
++        """返回首页。
++
++        线上部署时，平台网关要求**每个请求**都带 `sharecode`，浏览器自己发起的
++        `<link>` / `<script>` 不会带上主页面的查询参数，于是样式和脚本全部 403，
++        页面变成裸 HTML。而且网关在转发前会把 sharecode 从 query 里剥掉，
++        服务端也读不到它。
++
++        所以线上模式直接把 CSS/JS 内联进 HTML：整页只有一次请求，
++        后续的 fetch 由前端从 location.search 里取 sharecode 自行拼接。
++        本机运行没有这层网关，保持原来的外链，便于调试。
++        """
++        html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
++
++        if IN_CLOUD:
++            css = (WEB_DIR / "style.css").read_text(encoding="utf-8")
++            js = (WEB_DIR / "app.js").read_text(encoding="utf-8")
++            html = html.replace(
++                '<link rel="stylesheet" href="/static/style.css">',
++                f"<style>\n{css}\n</style>",
++            )
++            html = html.replace(
++                '<script src="/static/app.js"></script>',
++                f"<script>\n{js}\n</script>",
++            )
++
++        query = parse_qs(urlparse(self.path).query)
++        share = (query.get("sharecode") or [""])[0]
++        if share:
++            safe = "".join(ch for ch in share if ch.isalnum() or ch in "-_")[:64]
++            if safe:
++                html = re.sub(
++                    r'((?:href|src)="/static/[^"?]+)"',
++                    lambda m: f'{m.group(1)}?sharecode={safe}"',
++                    html,
++                )
++                html = html.replace(
++                    "<head>",
++                    f'<head>\n<script>window.__SHARE_CODE__={json.dumps(safe)};</script>',
++                    1,
++                )
++        self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
++
+     # ----------------------------------------------------------- GET
+     def do_GET(self) -> None:  # noqa: N802
+         route = urlparse(self.path).path
+         try:
+             if route in ("/", "/index.html"):
+-                self._serve_file(WEB_DIR / "index.html")
++                self._serve_index()
+             elif route.startswith("/static/"):
+                 rel = unquote(route[len("/static/"):])
+                 target = (WEB_DIR / rel).resolve()
+@@ -374,6 +446,18 @@
+ 
+ 
+ # --------------------------------------------------------------------- 启动
++def resolve_bind() -> tuple:
++    """决定监听地址与端口。
++
++    返回 (host, port, in_cloud)。平台发布时会注入 PORT 环境变量，
++    此时必须绑 0.0.0.0 才能被反向代理访问；本机运行则只绑回环地址。
++    """
++    env_port = (os.environ.get("PORT") or "").strip()
++    if env_port.isdigit():
++        return "0.0.0.0", int(env_port), True
++    return "127.0.0.1", 8765, False
++
++
+ def pick_port(preferred: int, host: str = "127.0.0.1") -> int:
+     for port in [preferred] + list(range(preferred + 1, preferred + 20)):
+         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+@@ -387,22 +471,28 @@
+ 
+ 
+ def main() -> None:
++    host, default_port, in_cloud = resolve_bind()
++
+     parser = argparse.ArgumentParser(description="校园通知雷达 · 本地服务")
+-    parser.add_argument("--port", type=int, default=8765)
++    parser.add_argument("--port", type=int, default=default_port)
+     parser.add_argument("--no-browser", action="store_true")
+     args = parser.parse_args()
+ 
+     _ensure_dirs()
+-    port = pick_port(args.port)
+-    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+-    url = f"http://127.0.0.1:{port}/"
+-
+-    _tel.event("app_start", ok=True, version=__version__, route="boot")
+-    print(f"校园通知雷达 v{__version__} 已启动：{url}")
+-    print("日志目录：process_logs/   按 Ctrl+C 停止")
+-
+-    if not args.no_browser:
+-        threading.Timer(0.6, lambda: webbrowser.open(url)).start()
++    # 云端端口由平台指定，不能改动；本机则允许自动让开被占用的端口
++    port = args.port if in_cloud else pick_port(args.port, host)
++    httpd = ThreadingHTTPServer((host, port), Handler)
++
++    _tel.event("app_start", ok=True, version=__version__, route="cloud" if in_cloud else "boot")
++
++    if in_cloud:
++        print(f"校园通知雷达 v{__version__} 已启动，监听 0.0.0.0:{port}")
++    else:
++        url = f"http://127.0.0.1:{port}/"
++        print(f"校园通知雷达 v{__version__} 已启动：{url}")
++        print("日志目录：process_logs/   按 Ctrl+C 停止")
++        if not args.no_browser:
++            threading.Timer(0.6, lambda: webbrowser.open(url)).start()
+ 
+     try:
+         httpd.serve_forever()
+diff -ruN iterations/v4_界面与动作修正/src/core/__init__.py iterations/v5_线上部署适配/src/core/__init__.py
+--- iterations/v4_界面与动作修正/src/core/__init__.py	2026-11-17 00:50:01.000000000 +0800
++++ iterations/v5_线上部署适配/src/core/__init__.py	2026-11-17 01:03:39.000000000 +0800
+@@ -9,4 +9,4 @@
+     inventory      实训器材借还核对
+ """
+ 
+-__version__ = "0.4.0"
++__version__ = "0.5.0"
+diff -ruN iterations/v4_界面与动作修正/src/data/tasks.json iterations/v5_线上部署适配/src/data/tasks.json
+--- iterations/v4_界面与动作修正/src/data/tasks.json	2026-11-17 00:50:01.000000000 +0800
++++ iterations/v5_线上部署适配/src/data/tasks.json	2026-11-17 01:03:39.000000000 +0800
+@@ -1,61 +1 @@
+-[
+-  {
+-    "id": "t20261117-001",
+-    "title": "关于开展2026-2027学年第一学期学生困难补助申请的通知",
+-    "deadline": "2026-11-21 17:00",
+-    "deadline_conf": 0.94,
+-    "urgency": "normal",
+-    "location": "行政楼302室",
+-    "materials": [
+-      {
+-        "name": "学生困难补助申请表",
+-        "qty": 2,
+-        "unit": "份"
+-      },
+-      {
+-        "name": "身份证复印件",
+-        "qty": 1,
+-        "unit": "份"
+-      },
+-      {
+-        "name": "上一学年成绩单",
+-        "qty": 1,
+-        "unit": "份"
+-      },
+-      {
+-        "name": "家庭经济困难佐证材料复印件",
+-        "qty": 1,
+-        "unit": "份"
+-      }
+-    ],
+-    "tags": [
+-      "教务",
+-      "资助"
+-    ],
+-    "done": false,
+-    "created_at": "2026-11-17T00:49",
+-    "note_file": "data\\notes\\t20261117-001.txt"
+-  },
+-  {
+-    "id": "t20261117-002",
+-    "title": "关于承办第49届世界技能大赛深圳市选拔赛报名工作的通知",
+-    "deadline": "2026-11-25 18:00",
+-    "deadline_conf": 0.99,
+-    "urgency": "normal",
+-    "location": "",
+-    "materials": [
+-      {
+-        "name": "照片",
+-        "qty": 1,
+-        "unit": "寸"
+-      }
+-    ],
+-    "tags": [
+-      "竞赛",
+-      "教务"
+-    ],
+-    "done": false,
+-    "created_at": "2026-11-17T00:49",
+-    "note_file": "data\\notes\\t20261117-002.txt"
+-  }
+-]
+\ No newline at end of file
++[]
+Binary files iterations/v4_界面与动作修正/src/docs/screenshots/04-online.png and iterations/v5_线上部署适配/src/docs/screenshots/04-online.png differ
+diff -ruN iterations/v4_界面与动作修正/src/docs/提交说明.md iterations/v5_线上部署适配/src/docs/提交说明.md
+--- iterations/v4_界面与动作修正/src/docs/提交说明.md	1970-01-01 08:00:00.000000000 +0800
++++ iterations/v5_线上部署适配/src/docs/提交说明.md	2026-11-17 12:52:16.595576300 +0800
+@@ -0,0 +1,187 @@
++# 提交说明 · 对照评分点
++
++一份材料对应一个评分点，逐条说明「在哪、怎么核验、现在还缺什么」。
++
++---
++
++## 总览
++
++| # | 评分点 | 分值 | 材料位置 | 状态 |
++| --- | --- | --- | --- | --- |
++| ① | 连续 7 天自动化运行日志 | 25 | `process_logs/` + `docs/运行日志汇总.md` | **已跑通，天数待累积** |
++| ② | 基于日志的 ≥3 次 Git 迭代 Diff | 20 | `git log` 4 条提交 + `CHANGELOG.md` | **已完成** |
++| ③ | 完整源码 + 8 位真实用户反馈 | 15 | 仓库根目录 + `feedback/` + `docs/用户反馈汇总.md` | 源码完成，**反馈待收集** |
++
++---
++
++## ① 运行日志（25 分）
++
++### 在哪
++
++```
++process_logs/
++├── 2026-11-17.jsonl       # 每天一份，一行一个事件
++├── summary.csv            # 每日汇总：事件数/错误率/平均耗时/P95
++└── reports/
++    └── 2026-11-17.md      # 自动生成的当日日报
++docs/运行日志汇总.md        # 全部日期汇总成一份（提交用）
++```
++
++### 怎么证明是真实自动化运行
++
++1. **日志由程序自己写**，不是手填。写入代码在 `core/telemetry.py:event()`，
++   每次调用 `app.py` 的接口或 `tools/daily_run.py` 都会产生记录。
++2. **有定时任务**。`tools/install_task.ps1` 注册 Windows 计划任务，每天 08:10 与 19:30 自动跑，
++   开机错过会补跑（`-StartWhenAvailable`）。
++3. **日志与代码改动能对上**。`CHANGELOG.md` 里每次修复的问题，都能在同期日志里找到对应的
++   错误记录（例如 `self_check_failed`）。
++4. **每天有 git commit**。`chore(logs)` 开头的提交就是当天的日志同步，提交时间与服务端记录一致。
++
++### 脱敏怎么做的
++
++| 项目 | 处理 | 代码位置 |
++| --- | --- | --- |
++| 时间戳 | 精确到分钟 + 时区，无毫秒 | `telemetry.py:_daily_path / event` |
++| 用户身份 | 6 位随机会话哈希 | `Telemetry.__init__` → `self.session` |
++| 通知原文 | 完全不写，只记字符数 | `_ALLOWED_META_KEYS` 白名单 |
++| 姓名/手机号/学号 | 正则替换 | `_SCRUB_RULES` |
++| 错误信息 | 只留异常类型与首行，截 200 字 | `event()` 内 `_scrub_text` |
++
++白名单是**机制性**的：不在 `_ALLOWED_META_KEYS` 里的键会被直接丢弃，
++不是靠写代码的人记得别写。单元测试 `test_scrub_meta_drops_unknown_keys` 守着这条。
++
++### 还差什么
++
++**天数。** 今天（11-17）是第 1 天。要满 7 天，需要真的运行到 11-23。
++
++两条路，自己选：
++
++- **路径 A（推荐）**：装计划任务，让机器自己跑 7 天，11-24 交作业。
++  ```powershell
++  powershell -ExecutionPolicy Bypass -File tools\install_task.ps1
++  ```
++  期间电脑要开着（睡眠也行，`-StartWhenAvailable` 会补跑）。每天不需要你做任何事。
++- **路径 B（赶时间）**：如实写「截至提交日已连续运行 N 天」，
++  把日志质量（脱敏、指标、错误记录）和其余两项做扎实，靠质量补天数。
++
++**不要做的**：改时间戳造 7 天。文件有创建时间、git 有提交时间戳、服务端也有一份，
++三处对不上就是硬伤，而且这个评分点本身就叫「防摆拍」。
++
++---
++
++## ② Git 迭代（20 分）
++
++### 四条提交，每次都有明确触发依据
++
++```
++5696a58 fix(ui): 修空态遮挡与动作抽取，补界面截图          ← 截图核对发现
++356da71 fix(timeparse): 识别时间区间与起始语，截止 62.5%→100%  ← 评测 3 条失败
++7fe1561 fix(parser): 重写地点与材料抽取，材料 62.5%→100%      ← 评测 8 条失败
++feada21 feat: v0.1.0 通知解析与器材核对首个可运行版本         ← 初始版本
++```
++
++### 怎么看
++
++```bash
++git log --oneline
++git show 7fe1561            # 看单次改了什么
++git diff feada21 5696a58    # 看全过程
++git log --stat              # 每次改动的文件与行数
++```
++
++### 为什么这算「基于日志的迭代」
++
++每次提交的 message 里都写了触发依据，并且依据是可复查的：
++
++- v0.2 / v0.3 的依据是 `tests/eval_parser.py` 的逐条失败结果，
++  评测记录留在 `docs/eval_2026-11-17_0045.md` 与 `docs/eval_2026-11-17_0047.md`；
++- v0.4 的依据是 `docs/screenshots/` 里的截图；
++- 更早还有一次：`tools/daily_run.py` 首次自检失败（日志里能查到 `self_check_failed`），
++  查出归还登记表表头写「归还人」而别名表只有「借用人」，整张表读不进来。
++
++### 还差什么
++
++没有。若要更充分，可以在后续 7 天里每天根据日志再提一次小改，
++把提交数堆到 8–10 条，说服力更强。
++
++---
++
++## ③ 源码 + 8 位用户反馈（15 分）
++
++### 源码
++
++```
++app.py                 417 行   本地服务、路由、业务编排
++core/telemetry.py      脱敏日志与统计
++core/timeparse.py      中文时间解析（项目的技术核心）
++core/notice_parser.py  通知结构化提取
++core/inventory.py      器材借还核对
++web/                   界面，原生 HTML/CSS/JS
++tools/                 每日任务、报告生成、计划任务注册
++tests/                 20 条单元测试 + 8 条语料评测
++```
++
++零第三方依赖，`python app.py` 就能跑。
++
++### 反馈
++
++**在线版已经部署好，直接把链接发给同学就能填反馈：**
++
++```
++https://wbapp-afaouz2pxzdkqew3f4th4r.app.workbuddy.host/?sharecode=YBY6WAHAYJ
++```
++
++收集方式写在 `docs/用户反馈收集说明.md`，程序内「使用反馈」标签页提交，
++本机数据落 `feedback/responses.jsonl`，跑 `python tools/export_feedback.py` 生成
++`docs/用户反馈汇总.md`。
++
++线上版提交后会额外给一段可复制的 JSON 记录（容器重建可能丢数据），
++让对方发给你、补录到本机文件即可，字段完全一致。
++
++**现在还是 0 条，这部分要你自己去收。** 8 个人，按说明里的身份配比找，
++每人 3 分钟。不要一个人填 8 条 —— 评分分布和措辞会露馅。
++
++### 反馈收完要做的事
++
++把反馈里提到的问题真的改一次，然后在 `CHANGELOG.md` 里写「由第 N 位用户反馈触发」。
++这条链路（用户说了 → 改了什么 → 怎么验证）本身就是这个评分点想看的。
++
++---
++
++## 推送到 GitHub
++
++```bash
++cd "D:/实验班/项目四"
++
++# 首次推送前，先把作者信息改成自己的
++git config user.name  "你的名字"
++git config user.email "你的GitHub邮箱"
++
++# 重写已有 4 条提交的作者，避免显示成占位身份
++git rebase --root --exec "git commit --amend --no-edit --reset-author"
++
++# 关联远程仓库并推送
++git remote add origin https://github.com/<你的账号>/<仓库名>.git
++git branch -M main
++git push -u origin main
++```
++
++> 当前提交作者是占位的 `Radar Dev <radar@localhost>`，**必须改成自己的**再推，
++> 否则 GitHub 上不计入你的贡献记录。
++
++## 提交前自检清单
++
++```bash
++python tests/test_core.py            # 20 条单元测试应全绿
++python tests/eval_parser.py          # 三项准确率应 100%
++python tools/gen_report.py           # 重新生成日志汇总
++python tools/export_feedback.py      # 重新生成反馈汇总
++git status --short                   # 应为空（data/notes 已被忽略）
++```
++
++- [ ] `process_logs/` 里有 7 个 jsonl（或如实标注实际天数）
++- [ ] `summary.csv` 有 7 行数据
++- [ ] `git log` 至少 3 条，每条 message 写明触发依据
++- [ ] `docs/用户反馈汇总.md` 有 8 条
++- [ ] 提交作者已改成自己
++- [ ] `data/notes/`（通知原文）没有被提交上去
+diff -ruN iterations/v4_界面与动作修正/src/docs/用户反馈收集说明.md iterations/v5_线上部署适配/src/docs/用户反馈收集说明.md
+--- iterations/v4_界面与动作修正/src/docs/用户反馈收集说明.md	2026-11-17 12:52:16.537406000 +0800
++++ iterations/v5_线上部署适配/src/docs/用户反馈收集说明.md	2026-11-17 12:52:16.611602800 +0800
+@@ -7,10 +7,33 @@
+ 
+ ## 一、准备
+ 
++**方式 A（推荐 · 在线版）**
++
++把下面的链接发给对方，手机或电脑都能直接打开，不用装任何东西：
++
++```
++https://wbapp-afaouz2pxzdkqew3f4th4r.app.workbuddy.host/?sharecode=YBY6WAHAYJ
++```
++
++线上版提交反馈后，页面会多出一段可复制的记录 —— 因为云端容器重建时文件可能被清空，
++**让对方把那段复制发给你**，你再补录到本机 `feedback/responses.jsonl`（格式见下）。
++
++**方式 B（几个人凑在一台电脑前）**
++
+ 1. 启动程序：`python app.py`，浏览器会打开 `http://127.0.0.1:8765/`
+ 2. 提前在「通知解析」里粘贴一条真实通知，确认能出结果（别在同学面前当场翻车）
+ 3. 准备好这条通知的原文，方便让对方自己试一次
+ 
++## 补录线上反馈
++
++线上收到的记录形如：
++
++```json
++{"ts": "2026-11-18T14:20", "role": "普通同学", "score": 4, "useful": ["截止时间提取"], "comment": "群消息里「下周三之前」识别不出来", "would_use": true}
++```
++
++原样追加一行到 `feedback/responses.jsonl` 即可，字段与网页提交完全一致。
++
+ ## 二、单人流程（约 3 分钟）
+ 
+ 1. **让对方自己操作**，你不要代点。给他一条真实通知（班级群里最近的一条就行），
+diff -ruN iterations/v4_界面与动作修正/src/docs/用户反馈汇总.md iterations/v5_线上部署适配/src/docs/用户反馈汇总.md
+--- iterations/v4_界面与动作修正/src/docs/用户反馈汇总.md	1970-01-01 08:00:00.000000000 +0800
++++ iterations/v5_线上部署适配/src/docs/用户反馈汇总.md	2026-11-17 12:52:16.624674000 +0800
+@@ -0,0 +1,6 @@
++# 用户反馈汇总
++
++暂无反馈数据。
++
++收集方式见 `docs/用户反馈收集说明.md`：打开程序 → 「使用反馈」标签页 → 填完提交，
++数据写入 `feedback/responses.jsonl`，再运行本脚本生成汇总。
+diff -ruN iterations/v4_界面与动作修正/src/docs/运行日志汇总.md iterations/v5_线上部署适配/src/docs/运行日志汇总.md
+--- iterations/v4_界面与动作修正/src/docs/运行日志汇总.md	1970-01-01 08:00:00.000000000 +0800
++++ iterations/v5_线上部署适配/src/docs/运行日志汇总.md	2026-11-17 12:52:16.639559600 +0800
+@@ -0,0 +1,40 @@
++# 程序自动化运行日志汇总
++
++> 统计区间：2026-11-17 — 2026-11-17，连续 1 天
++> 本报告由 `tools/gen_report.py` 于 2026-11-17 00:50 自动生成，数据源为 `process_logs/*.jsonl`
++
++## 总体指标
++
++| 指标 | 数值 |
++| --- | --- |
++| 覆盖天数 | 1 天 |
++| 事件总数 | 100 |
++| 错误总数 | 2（2.0%） |
++| 加权平均耗时 | 2.52 ms |
++
++## 每日明细
++
++| 日期 | 事件数 | 错误 | 错误率 | 平均耗时 | P95 | 会话数 | 最高频事件 |
++| --- | --- | --- | --- | --- | --- | --- | --- |
++| 2026-11-17 | 100 | 2 | 2.0% | 2.52 ms | 8.21 ms | 16 | eval_case |
++
++## 事件类型分布
++
++| 事件 | 次数 | 占比 |
++| --- | --- | --- |
++| eval_case | 72 | 72.0% |
++| dev_diagnose | 8 | 8.0% |
++| parse_notice | 6 | 6.0% |
++| app_start | 3 | 3.0% |
++| daily_run_end | 3 | 3.0% |
++| daily_run_start | 3 | 3.0% |
++| self_check | 3 | 3.0% |
++| check_inventory | 2 | 2.0% |
++
++## 错误记录
++
++| 时间 | 事件 | 类型 | 信息 |
++| --- | --- | --- | --- |
++| 2026-11-17T00:43+08:00 | self_check | self_check_failed | self_check_failed |
++| 2026-11-17T00:43+08:00 | daily_run_end | unknown |  |
++
+diff -ruN iterations/v4_界面与动作修正/src/web/app.js iterations/v5_线上部署适配/src/web/app.js
+--- iterations/v4_界面与动作修正/src/web/app.js	2026-11-17 00:50:01.000000000 +0800
++++ iterations/v5_线上部署适配/src/web/app.js	2026-11-17 01:03:39.000000000 +0800
+@@ -12,8 +12,18 @@
+     .replace(/"/g, "&quot;");
+ }
+ 
++/* 线上发布后网关要求每个请求都带 sharecode，否则 403。
++   服务端渲染首页时注入了 window.__SHARE_CODE__，这里统一附加。 */
++const SHARE_CODE =
++  window.__SHARE_CODE__ || new URLSearchParams(location.search).get("sharecode") || "";
++
++function withShare(path) {
++  if (!SHARE_CODE) return path;
++  return path + (path.includes("?") ? "&" : "?") + "sharecode=" + encodeURIComponent(SHARE_CODE);
++}
++
+ async function api(path, options = {}) {
+-  const res = await fetch(path, {
++  const res = await fetch(withShare(path), {
+     headers: { "Content-Type": "application/json" },
+     ...options,
+   });
+@@ -311,7 +321,7 @@
+ }
+ 
+ $("#btn-refresh-tasks").addEventListener("click", loadTasks);
+-$("#btn-ics").addEventListener("click", () => window.open("/api/export.ics", "_blank"));
++$("#btn-ics").addEventListener("click", () => window.open(withShare("/api/export.ics"), "_blank"));
+ 
+ /* ------------------------------------------------------------ 器材 */
+ let invRows = [];
+@@ -403,7 +413,7 @@
+ });
+ 
+ $("#btn-export-inv").addEventListener("click", async () => {
+-  const res = await fetch("/api/export", {
++  const res = await fetch(withShare("/api/export"), {
+     method: "POST",
+     headers: { "Content-Type": "application/json" },
+     body: JSON.stringify({ rows: invRows }),
+@@ -430,6 +440,13 @@
+   });
+ });
+ 
++/* 线上部署时 hostname 不是回环地址，反馈要多给一份可带走的副本 */
++const IS_CLOUD = !["127.0.0.1", "localhost", "::1"].includes(location.hostname);
++if (IS_CLOUD) {
++  const mode = $("#foot-mode");
++  if (mode) mode.textContent = "线上演示版";
++}
++
+ $("#btn-feedback").addEventListener("click", async () => {
+   if (!fbScore) {
+     $("#fb-score-label").textContent = "先点个分吧";
+@@ -447,17 +464,39 @@
+         would_use: $("#fb-would").checked,
+       }),
+     });
+-    if (data.ok) {
+-      $("#fb-thanks").hidden = false;
+-      $("#fb-thanks").textContent = `已记录，谢谢。本机累计 ${data.count} 条反馈。`;
+-      $("#fb-comment").value = "";
+-      loadFeedbackCount();
++    if (!data.ok) return;
++
++    $("#fb-thanks").hidden = false;
++    $("#fb-thanks").textContent = data.persisted
++      ? `已记录，本机累计 ${data.count} 条反馈，谢谢。`
++      : "已收到，谢谢。";
++
++    // 云端：给一份可复制的原始记录，容器重建也不至于把反馈弄丢
++    const wrap = $("#fb-echo-wrap");
++    if (IS_CLOUD || !data.persisted) {
++      $("#fb-echo").textContent = data.line || "";
++      wrap.hidden = false;
++    } else {
++      wrap.hidden = true;
+     }
++
++    $("#fb-comment").value = "";
++    loadFeedbackCount();
+   } catch (err) {
+     alert("提交失败：" + err.message);
+   }
+ });
+ 
++$("#btn-copy-fb").addEventListener("click", async () => {
++  try {
++    await navigator.clipboard.writeText($("#fb-echo").textContent);
++    $("#btn-copy-fb").textContent = "已复制 ✓";
++    setTimeout(() => ($("#btn-copy-fb").textContent = "复制这条反馈"), 1600);
++  } catch {
++    alert("复制失败，请手动选中文本复制");
++  }
++});
++
+ async function loadFeedbackCount() {
+   try {
+     const data = await api("/api/feedback/count");
+diff -ruN iterations/v4_界面与动作修正/src/web/index.html iterations/v5_线上部署适配/src/web/index.html
+--- iterations/v4_界面与动作修正/src/web/index.html	2026-11-17 00:50:01.000000000 +0800
++++ iterations/v5_线上部署适配/src/web/index.html	2026-11-17 01:03:39.000000000 +0800
+@@ -161,12 +161,17 @@
+ 
+       <button class="btn primary wide" id="btn-feedback">提交反馈</button>
+       <p class="hint" id="fb-thanks" hidden>已记录，谢谢。</p>
++      <div id="fb-echo-wrap" hidden>
++        <p class="hint">已收到。线上环境重建后数据可能清空，建议点一下复制，把这条发给项目组备份。</p>
++        <pre id="fb-echo" class="feedback-echo"></pre>
++        <button class="btn ghost small" id="btn-copy-fb">复制这条反馈</button>
++      </div>
+     </div>
+   </section>
+ </main>
+ 
+ <footer>
+-  <span>校园通知雷达 <strong id="version">v0.1.0</strong> · 纯本地运行 · 无第三方依赖</span>
++  <span>校园通知雷达 <strong id="version">v0.1.0</strong> · <span id="foot-mode">纯本地运行</span> · 无第三方依赖</span>
+   <span id="foot-stat"></span>
+ </footer>
+ 
+diff -ruN iterations/v4_界面与动作修正/src/web/style.css iterations/v5_线上部署适配/src/web/style.css
+--- iterations/v4_界面与动作修正/src/web/style.css	2026-11-17 00:50:01.000000000 +0800
++++ iterations/v5_线上部署适配/src/web/style.css	2026-11-17 01:03:39.000000000 +0800
+@@ -450,6 +450,20 @@
+ 
+ .checkline { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 13.5px; }
+ 
++.feedback-echo {
++  white-space: pre-wrap;
++  word-break: break-all;
++  background: #f7f9fc;
++  border: 1px solid var(--line);
++  border-radius: 10px;
++  padding: 10px 12px;
++  font-size: 11.5px;
++  line-height: 1.55;
++  color: var(--ink-2);
++  margin: 8px 0;
++  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
++}
++
+ /* ---------------- 页脚 ---------------- */
+ footer {
+   max-width: 1180px;
