@@ -146,3 +146,6 @@
 {"ts":"2026-11-17T19:10+08:00","sid":"6bebc9","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
 {"ts":"2026-11-17T19:10+08:00","sid":"6bebc9","evt":"self_check","dur_ms":10.99,"ok":true,"meta":{"sample":2}}
 {"ts":"2026-11-17T19:10+08:00","sid":"6bebc9","evt":"daily_run_end","dur_ms":12.81,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
+{"ts":"2026-11-17T19:30+08:00","sid":"607252","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-17T19:30+08:00","sid":"607252","evt":"self_check","dur_ms":10.63,"ok":true,"meta":{"sample":2}}
+{"ts":"2026-11-17T19:30+08:00","sid":"607252","evt":"daily_run_end","dur_ms":12.38,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}

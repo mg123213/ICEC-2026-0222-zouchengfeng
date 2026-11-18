@@ -1,2 +1,3 @@
 ﻿date,events,calls,errors,error_rate,avg_ms,p95_ms,max_ms,sessions,top_event
-2026-11-17,148,141,2,1.35,3.61,12.76,50.4,27,eval_case
+2026-11-17,151,144,2,1.32,3.73,12.72,50.4,28,eval_case
+2026-11-18,6,6,0,0.0,52.49,78.21,78.61,2,daily_run_end
