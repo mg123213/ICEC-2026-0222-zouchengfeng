@@ -1,0 +1,6 @@
+{"ts":"2026-11-20T18:47+08:00","sid":"aaf9db","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-20T18:47+08:00","sid":"aaf9db","evt":"self_check","dur_ms":71.48,"ok":true,"meta":{"sample":2}}
+{"ts":"2026-11-20T18:47+08:00","sid":"aaf9db","evt":"daily_run_end","dur_ms":73.83,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
+{"ts":"2026-11-20T19:30+08:00","sid":"5f6c6f","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-20T19:30+08:00","sid":"5f6c6f","evt":"self_check","dur_ms":111.72,"ok":true,"meta":{"sample":2}}
+{"ts":"2026-11-20T19:30+08:00","sid":"5f6c6f","evt":"daily_run_end","dur_ms":141.74,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
