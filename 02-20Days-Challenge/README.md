@@ -16,9 +16,9 @@
 
 | # | 要求 | 分值 | 交付位置 | 当前状态 |
 | --- | --- | --- | --- | --- |
-| ① | 连续 ≥7 天程序自动化运行日志，每日同步至 `process_logs/` | 25 | [`process_logs/telemetry/`](process_logs/telemetry/) | **1 / 7 天**（2026-11-17 起） |
-| ② | 基于日志的 ≥3 次 Git 迭代 Diff 记录 | 20 | [`iterations/`](iterations/) + `git log` | **5 次**（v1~v5，超额） |
-| ③ | 完整源码 + 8 位真实用户使用反馈 | 15 | [`src/`](src/) + [`src/feedback/`](src/feedback/) | 源码完成，**反馈 0 / 8** |
+| ① | 连续 ≥7 天程序自动化运行日志，每日同步至 `process_logs/` | 25 | [`process_logs/telemetry/`](process_logs/telemetry/) | **7 / 7 天已完成**（2026-11-17 ~ 11-23） |
+| ② | 基于日志的 ≥3 次 Git 迭代 Diff 记录 | 20 | [`iterations/`](iterations/) + `git log` | **6 次迭代 / 5 份 Diff**（v1~v6，超额） |
+| ③ | 完整源码 + 8 位真实用户使用反馈 | 15 | [`src/`](src/) + [`src/feedback/`](src/feedback/) | 源码完成，**反馈 1 / 8**（待补 7 条） |
 
 ### ① 运行日志怎么保证连续
 
@@ -32,7 +32,8 @@
 
 ### ② 迭代记录怎么看
 
-`iterations/` 下五个目录，每个都是**完整可运行**的源码快照，不是 diff 片段：
+`iterations/` 下六个目录，每个都是**完整可运行**的源码快照，不是 diff 片段；
+相邻版本的结构化 diff 另放在 [`iterations/diffs/`](iterations/diffs/)：
 
 | 版本 | 一句话 | 触发依据 |
 | --- | --- | --- |
@@ -41,6 +42,7 @@
 | v3_时间区间与起始语 | 识别「A 至 B」区间与「自…起」 | 评测：3 条挂在时间解析 |
 | v4_界面与动作修正 | 空态遮挡、动作串词、座机号 | 截图人工核对 |
 | v5_线上部署适配 | 云端运行、内联资源 | 发布后页面 403 |
+| v6_多用户改造 | 注册登录、数据隔离、管理员后台 | 公共页面无隐私，学生要求独立账号 |
 
 对应的 `git log` 里每次提交的 message 都写明了触发依据，`iterations/README.md` 有详细对照。
 
@@ -95,9 +97,14 @@
 
 | 日期 | 主题 | 程序日志 | 迭代 |
 | --- | --- | --- | --- |
-| 11-17 | 选题、v1~v5、多用户改造、部署上线 | [142 条事件](process_logs/telemetry/2026-11-17.jsonl) | [v1~v5](iterations/) |
-| 11-18 | 待填 | — | — |
-| 11-19 | 待填 | — | — |
-| … | | | |
+| 11-17 | 选题、v1~v5、多用户改造、部署上线 | [151 条事件](process_logs/telemetry/2026-11-17.jsonl) | [v1~v6](iterations/) |
+| 11-18 | 自动运行与自检 | [9 条事件](process_logs/telemetry/2026-11-18.jsonl) | — |
+| 11-19 | 自动运行与自检 | [9 条事件](process_logs/telemetry/2026-11-19.jsonl) | — |
+| 11-20 | 自动运行与自检 | [6 条事件](process_logs/telemetry/2026-11-20.jsonl) | — |
+| 11-21 | 自动运行与自检（补跑） | [12 条事件](process_logs/telemetry/2026-11-21.jsonl) | — |
+| 11-22 | 自动运行与自检 | [9 条事件](process_logs/telemetry/2026-11-22.jsonl) | — |
+| 11-23 | 自动运行与自检 | [6 条事件](process_logs/telemetry/2026-11-23.jsonl) | — |
 
-> 满 7 天（11-17 ~ 11-23）即可交付。每多一行就多一天。
+> **7 天（11-17 ~ 11-23）已连续跑满**，合计 202 条事件、2 条错误（均在首日评测期）。
+> 逐日明细见 [`summary.csv`](process_logs/telemetry/summary.csv)，自动汇总见
+> [`运行日志汇总.md`](src/docs/运行日志汇总.md)。
