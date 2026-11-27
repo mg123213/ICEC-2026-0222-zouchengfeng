@@ -201,7 +201,7 @@ src/
 powershell -ExecutionPolicy Bypass -File tools\install_task.ps1
 ```
 
-每天 08:10 与 19:30 各跑一次，关机错过会在开机后补跑。卸载加 `-Uninstall`。
+按 `19:10 / 19:30` 跑（脚本按 `08:10 / 19:30` 注册，实际日志里 19:30 每天触发、19:10 触发 4 次），关机错过会在开机后补跑。卸载加 `-Uninstall`。
 
 **编辑器内置的定时任务**
 
