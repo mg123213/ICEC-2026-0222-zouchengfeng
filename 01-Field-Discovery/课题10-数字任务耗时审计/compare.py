@@ -22,13 +22,13 @@ plt.rcParams["axes.unicode_minus"] = False
 
 
 def load_manual():
-    """优先读秒表实测；没有实测则退到步骤分解估算，并返回来源标记"""
+    """优先读人工操作实录；没有则退到步骤分解估算，并返回来源标记"""
     real = os.path.join(OUT, "人工耗时.csv")
     est = os.path.join(OUT, "人工耗时_估算.csv")
     if os.path.exists(real):
         df = pd.read_csv(real)
         df = df[df["是否热身"] != "是"].reset_index(drop=True)
-        return df, "实测"
+        return df, "实录"
     if os.path.exists(est):
         return pd.read_csv(est), "估算"
     sys.exit("找不到人工耗时数据 —— 先跑 manual_timer.py 或 simulate_manual.py")
