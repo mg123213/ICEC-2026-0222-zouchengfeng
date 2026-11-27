@@ -1,0 +1,6 @@
+{"ts":"2026-11-24T11:57+08:00","sid":"b1d665","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-24T11:57+08:00","sid":"b1d665","evt":"self_check","dur_ms":14.13,"ok":true,"meta":{"sample":2}}
+{"ts":"2026-11-24T11:57+08:00","sid":"b1d665","evt":"daily_run_end","dur_ms":16.34,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}
+{"ts":"2026-11-24T19:30+08:00","sid":"d8220b","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-24T19:30+08:00","sid":"d8220b","evt":"self_check","dur_ms":64.25,"ok":true,"meta":{"sample":2}}
+{"ts":"2026-11-24T19:30+08:00","sid":"d8220b","evt":"daily_run_end","dur_ms":65.96,"ok":true,"meta":{"mode":"full","items":0,"source":"auto"}}

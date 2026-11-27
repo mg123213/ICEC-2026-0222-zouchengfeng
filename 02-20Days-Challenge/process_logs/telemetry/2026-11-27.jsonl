@@ -1,0 +1,3 @@
+{"ts":"2026-11-27T12:53+08:00","sid":"655c72","evt":"daily_run_start","ok":true,"meta":{"mode":"full","source":"auto"}}
+{"ts":"2026-11-27T12:53+08:00","sid":"655c72","evt":"self_check","dur_ms":38.09,"ok":false,"err":"self_check_failed","meta":{"sample":1}}
+{"ts":"2026-11-27T12:53+08:00","sid":"655c72","evt":"daily_run_end","dur_ms":40.08,"ok":false,"meta":{"mode":"full","items":0,"source":"auto"}}

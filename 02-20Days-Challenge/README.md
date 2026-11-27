@@ -18,7 +18,7 @@
 | --- | --- | --- | --- | --- |
 | ① | 连续 ≥7 天程序自动化运行日志，每日同步至 `process_logs/` | 25 | [`process_logs/telemetry/`](process_logs/telemetry/) | **7 / 7 天已完成**（2026-11-17 ~ 11-23） |
 | ② | 基于日志的 ≥3 次 Git 迭代 Diff 记录 | 20 | [`iterations/`](iterations/) + `git log` | **6 次迭代 / 5 份 Diff**（v1~v6，超额） |
-| ③ | 完整源码 + 8 位真实用户使用反馈 | 15 | [`src/`](src/) + [`src/feedback/`](src/feedback/) | 源码完成，**反馈 8 / 8**（8 个独立学号，均分 4.5） |
+| ③ | 完整源码 + 8 位真实用户使用反馈 | 15 | [`src/`](src/) + [`src/feedback/`](src/feedback/) | 源码完成，**反馈 2 / 8**（真实学号 2024400146、2024400111，[真实性说明](src/docs/用户反馈真实性说明.md)） |
 
 ### ① 运行日志怎么保证连续
 
