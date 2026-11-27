@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import http.cookiejar
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
@@ -69,7 +70,7 @@ def main() -> int:
     parser.add_argument("--base", default="http://127.0.0.1:8765")
     parser.add_argument("--sharecode", default="")
     parser.add_argument("--admin", default="2024400222")
-    parser.add_argument("--admin-pwd", default="13579adS")
+    parser.add_argument("--admin-pwd", default=os.environ.get("ICEC_ADMIN_PWD", ""))
     parser.add_argument("--student", default="2024400001")
     parser.add_argument("--student-pwd", default="test1234")
     args = parser.parse_args()

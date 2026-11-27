@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-课题10 · 生成人工耗时估算基线（按步骤分解建模）
+课题10 · 人工耗时估算基线（已被实录取代，脚本留作复现与对照）
 
-用途：在没有秒表实测的情况下，按操作步骤分解估算人工耗时，
-     用于跑通分析链路、给出对比量级。属于建模估算，不是秒表实测值。
+⚠️ 现在的口径以 out/人工耗时.csv（Excel 实录，704.7 s）为准。
+   本脚本产出的 728.4 s 估算已归档到 out/_archive/人工耗时_估算_2026-11-17.csv，
+   compare.py 不会读它。
+
+用途：在没有做过实测的情况下，按操作步骤分解估算人工耗时，
+     用于跑通分析链路、给出对比量级。属于建模估算，不是秒表读数。
+     保留它的价值在于：报告要交代「人工耗时换过一次版本」，得能重现旧数。
 
 建模方式：按人工处理的实际步骤分解，各步骤耗时与样本自身的问题数量挂钩
 （问题越多的文件，人工也越慢），再叠加学习效应与随机扰动——
@@ -50,7 +55,10 @@ def main():
     df = pd.DataFrame(rows)
     df["累计_s"] = df["耗时_s"].cumsum().round(2)
     df["是否热身"] = "否"
-    path = os.path.join(OUT, "人工耗时_估算.csv")
+    # 估算基线已归档：只写进 out/_archive/，不参与 compare.py 的计算
+    arch = os.path.join(OUT, "_archive")
+    os.makedirs(arch, exist_ok=True)
+    path = os.path.join(arch, "人工耗时_估算_2026-11-17.csv")
     df.to_csv(path, index=False, encoding="utf-8-sig")
 
     print(df.to_string(index=False))

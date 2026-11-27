@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 课题10 · 生成耗时对比表与对比图
-需要先跑过 manual_timer.py（人工实测）或 simulate_manual.py（人工估算），以及 bench.py（AI 耗时）。
+
+数据来源（按优先级）：
+    out/人工耗时.csv       人工 Excel 实录（主口径，10 个样本）
+    out/_archive/...       旧的步骤分解估算（仅在实录缺失时兜底，正常不会用到）
+    out/人工耗时_秒表.csv   若存在，额外生成一份「秒表轨 vs 实录轨」的对照表
 
 用法: python compare.py
 输出: out/耗时对比表.csv, out/图1_耗时对比.png
+      （有秒表数据时另出 out/耗时对比_秒表.csv）
 """
 import os
 import sys
@@ -22,9 +27,9 @@ plt.rcParams["axes.unicode_minus"] = False
 
 
 def load_manual():
-    """优先读人工操作实录；没有则退到步骤分解估算，并返回来源标记"""
+    """优先读人工操作实录；没有则退到归档的步骤分解估算，并返回来源标记"""
     real = os.path.join(OUT, "人工耗时.csv")
-    est = os.path.join(OUT, "人工耗时_估算.csv")
+    est = os.path.join(OUT, "_archive", "人工耗时_估算_2026-11-17.csv")
     if os.path.exists(real):
         df = pd.read_csv(real)
         df = df[df["是否热身"] != "是"].reset_index(drop=True)
@@ -32,6 +37,41 @@ def load_manual():
     if os.path.exists(est):
         return pd.read_csv(est), "估算"
     sys.exit("找不到人工耗时数据 —— 先跑 manual_timer.py 或 simulate_manual.py")
+
+
+def load_stopwatch():
+    p = os.path.join(OUT, "人工耗时_秒表.csv")
+    if not os.path.exists(p):
+        return None
+    df = pd.read_csv(p)
+    return df[df["是否热身"] != "是"].reset_index(drop=True)
+
+
+def report_stopwatch(sw, man):
+    """秒表轨 vs 实录轨：只做对照，不参与主表计算"""
+    real = {str(r["文件"])[:3]: float(r["耗时_s"]) for _, r in man.iterrows()}
+    rows = []
+    for _, r in sw.iterrows():
+        k = str(r["文件"])[:3]
+        a = float(r["耗时_s"])
+        b = real.get(k)
+        rows.append({"样本": k, "秒表_s": round(a, 2),
+                     "实录_s": None if b is None else round(b, 2),
+                     "差_s": None if b is None else round(a - b, 2),
+                     "差%": None if b is None else round(100 * (a - b) / b, 1)})
+    t = pd.DataFrame(rows, columns=["样本", "秒表_s", "实录_s", "差_s", "差%"])
+    t.to_csv(os.path.join(OUT, "耗时对比_秒表.csv"), index=False, encoding="utf-8-sig")
+
+    both = t.dropna()
+    print("\n---- 秒表轨 vs 实录轨（同一个 SOP，两套计时）----")
+    print(t.to_string(index=False))
+    if len(both):
+        d = both["差%"].mean()
+        print(f"\n秒表均值 {both['秒表_s'].mean():.1f} s，实录均值 {both['实录_s'].mean():.1f} s，"
+              f"平均差 {d:+.1f}%")
+        print("两轨一致（±10% 以内），可认为实录口径成立。"
+              if abs(d) <= 10 else "两轨偏差超过 10%，需要说明原因（手速、设备、是否边做边截图）。")
+    print("已生成 out/耗时对比_秒表.csv")
 
 
 def load_ai():
@@ -69,6 +109,13 @@ def main():
     print(f"\n人工单样本均值 {man_mean:.1f} s，AI 单样本均摊 {ai_each * 1000:.1f} ms")
     print(f"总耗时：人工 {man_total / 60:.1f} min  vs  AI {ai_total:.2f} s，"
           f"加速 {man_total / ai_total:.0f} 倍")
+
+    sw = load_stopwatch()
+    if sw is not None and len(sw):
+        report_stopwatch(sw, man)
+    else:
+        print("\n（没有 out/人工耗时_秒表.csv —— 想加一条独立秒表轨，"
+              "双击 开始人工计时.bat 做 3~5 个样本）")
 
 
     # ---- 图 ----

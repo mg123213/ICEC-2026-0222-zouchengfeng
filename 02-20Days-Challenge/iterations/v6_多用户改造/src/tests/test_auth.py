@@ -35,7 +35,7 @@ class TestRegister(AuthTestBase):
 
     def test_admin_whitelist(self):
         """管理员学号注册后即为 admin。"""
-        result = auth.register(self.store, "2024400222", "13579adS")
+        result = auth.register(self.store, "2024400222", "Admin123456")
         self.assertTrue(result["ok"])
         self.assertEqual(result["role"], "admin")
 
@@ -51,7 +51,7 @@ class TestRegister(AuthTestBase):
                              "invalid_student_id", msg=sid)
 
     def test_weak_password(self):
-        for pwd in ("123", "123456", "abcdef", "13579adS"[:5]):
+        for pwd in ("123", "123456", "abcdef", "13579"):
             self.assertEqual(auth.register(self.store, "2024400003", pwd)["error"],
                              "weak_password", msg=pwd)
 

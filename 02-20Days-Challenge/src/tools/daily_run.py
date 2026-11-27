@@ -152,9 +152,14 @@ def self_check() -> dict:
     samples = sorted((SRC / "data" / "samples").glob("*.txt"))
     hit = 0
     probe = samples[:4]
+    # 自检必须与真实日期解耦：样例里的截止时间是固定的 11-21~11-25，
+    # 过了这些日期后解析器会正确判定「已过期」并返回 None，
+    # 若仍用 datetime.now()，自检会从某天起恒失败（11-26 起出现过）。
+    # 这里固定一个样例设计时的参考时刻，测的是「解析能力」而不是「日期是否还没过」。
+    ref_now = datetime(2026, 11, 17, 9, 0)
     for path in probe:
         try:
-            result = notice_parser.parse_notice(path.read_text(encoding="utf-8"))
+            result = notice_parser.parse_notice(path.read_text(encoding="utf-8"), now=ref_now)
             hit += 1 if result.get("deadline") else 0
         except Exception:  # noqa: BLE001
             pass
